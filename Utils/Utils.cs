@@ -10,6 +10,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using static Utils.RobamApi;
 using Robam_Sync;
+using Robam_Sync.Models;
 
 namespace Utils
 {
@@ -79,6 +80,23 @@ namespace Utils
                     Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss ffff"),
                     IsError = iserror,
                     Message = message
+                });
+            }
+            catch (Exception exp)
+            {
+                Logger.log(exp.Message);
+            }
+        }
+
+        public static void RecordStepNew<T>(string message, bool iserror = false) where T : Sqlite_Models_Parent, new()
+        {
+            try
+            {
+                Sqlite_Helper_Static.write<T>(new T()
+                {
+                    errorTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss ffff"),
+                    isError = iserror,
+                    description = message
                 });
             }
             catch (Exception exp)
