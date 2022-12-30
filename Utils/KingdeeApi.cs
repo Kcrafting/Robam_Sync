@@ -17,6 +17,7 @@ namespace Utils
         static string host , acctid, username, pwd ;
         static List<UserAccount> acctList = new List<UserAccount>();
         static volatile bool acctListGet = false;
+        static object m_lock = new object();
         #region A1
         public enum CreateResult
         {
@@ -55,11 +56,14 @@ namespace Utils
         }
         public static void TryGetAccount()
         {
-            if (!acctListGet)
+            lock (m_lock)
             {
-                if (GetRobamAccountList())
+                if (!acctListGet)
                 {
-                    acctListGet = true;
+                    if (GetRobamAccountList())
+                    {
+                        acctListGet = true;
+                    }
                 }
             }
         }

@@ -30,17 +30,27 @@ namespace Robam_Sync
         volatile static bool sg_sync_syncallitem_Running = false;
         volatile static bool sg_sync_syncallitemparts_Running = false;
         volatile static bool sg_sync_syncallishops_Running = false;
-
+        static bool K3cloud_Init = false;
         public Robam_Sync()
         {
-            string txt = System.Text.Encoding.UTF8.GetString(Resource.appsettings);
-            var obj = JObject.Parse(txt);
-            KingdeeApi.InitAccount(
-                obj.SelectToken("K3CloudAccount.['Host']").Value<string>(),
-                obj.SelectToken("K3CloudAccount.['AcctId']").Value<string>(),
-                obj.SelectToken("K3CloudAccount.['UserName']").Value<string>(),
-                Utils.Utils.Decode(obj.SelectToken("K3CloudAccount.['Pwd']").Value<string>())
-                );
+            if (!K3cloud_Init)
+            {
+                K3cloud_Init = true;
+                string txt = System.Text.Encoding.UTF8.GetString(Resource.appsettings);
+                var obj = JObject.Parse(txt);
+                new Thread(() =>
+                {
+                    KingdeeApi.InitAccount(
+                    obj.SelectToken("K3CloudAccount.['Host']").Value<string>(),
+                    obj.SelectToken("K3CloudAccount.['AcctId']").Value<string>(),
+                    obj.SelectToken("K3CloudAccount.['UserName']").Value<string>(),
+                    Utils.Utils.Decode(obj.SelectToken("K3CloudAccount.['Pwd']").Value<string>())
+                    );
+                })
+                { IsBackground = true }.Start();
+            }
+            
+            
         }
 
         /// <summary>
@@ -49,6 +59,10 @@ namespace Robam_Sync
         /// <param name="startDate">开始日期</param>
         /// <param name="endDate">结束日期</param>
         /// <returns></returns>
+        public delegate void WriteLog(string txt, bool iserror = false);
+        public static WriteLog wl_instock { get; set; } = Utils.Utils.RecordStepNew<Sqlite_Models_Instock>;
+        public static WriteLog wl_outstock { get; set; } = Utils.Utils.RecordStepNew<Sqlite_Models_Outstock>;
+        
         [HttpPost]
         [Route("api/syncinstockbill")]
         public Sqlite_Models_Result_TableMessage sync_StockList([FromForm] string startDate, string endDate)
@@ -67,26 +81,26 @@ namespace Robam_Sync
                         i => i.ServerType == RobamApi.ServerType.Robam_Crm && i.BusinessType == RobamApi.BusinessType.Robam_CP,
                        (acct) =>
                        {
-                           Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("开始进行导入,账号" + acct.FAccount);
+                           wl_instock("开始进行导入,账号" + acct.FAccount);
                            DateTime _StartDate, _EndDate;
                            if (!DateTime.TryParse(startDate, out _StartDate))
                            {
-                               Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("传入的开始日期参数不能转换为日期！", true);
+                               wl_instock("传入的开始日期参数不能转换为日期！", true);
                                return;
                            }
                            if (!DateTime.TryParse(endDate, out _EndDate))
                            {
-                               Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("传入的结束日期参数不能转换为日期", true);
+                               wl_instock("传入的结束日期参数不能转换为日期", true);
                                return;
                            }
                            if (!(_EndDate - _StartDate > TimeSpan.FromHours(6)))
                            {
-                               Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("日期间隔时间太短！", true);
+                               wl_instock("日期间隔时间太短！", true);
                                return;
                            }
                            if (_EndDate - _StartDate > TimeSpan.FromDays(2))
                            {
-                               Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("日期间隔时间不能超过2天，否则将导致导入时间过长!", true);
+                               wl_instock("日期间隔时间不能超过2天，否则将导致导入时间过长!", true);
                                return;
                            }
                            var k3cloud = new KingdeeApi();
@@ -100,25 +114,25 @@ namespace Robam_Sync
                            var unsyncbilltype = k3cloud.UnsyncBillType("STK_InStock");
                            if (unsyncbilltype == null)
                            {
-                               Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("单据列表获取失败!", true);
+                               wl_instock("单据列表获取失败!", true);
                                return;
                            }
-                           Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("开始获取单据列表，对比未同步信息");
+                           wl_instock("开始获取单据列表，对比未同步信息");
                            var instockbill = ins.GetOutstockbill(_StartDate.ToString("yyyy-MM-dd HH:mm:ss"), _EndDate.ToString("yyyy-MM-dd HH:mm:ss"));
                            if (instockbill == null && instockbill.crminvexportheaderss == null)
                            {
-                               Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("老板分销系统获取单据失败", true);
+                               wl_instock("老板分销系统获取单据失败", true);
                                return;
                            }
-                           Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("老板分销系统获取单据共计" + (instockbill?.crminvexportheaderss?.Count.ToString() ?? "0") + "条");
+                           wl_instock("老板分销系统获取单据共计" + (instockbill?.crminvexportheaderss?.Count.ToString() ?? "0") + "条");
 
                            var k3billlist = k3cloud.GetSyncedBillNoList(_StartDate.ToString("yyyy-MM-dd HH:mm:ss"), _EndDate.ToString("yyyy-MM-dd HH:mm:ss"));
                            if (k3billlist == null)
                            {
-                               Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("获取K3单据列表失败", true);
+                               wl_instock("获取K3单据列表失败", true);
                                return;
                            }
-                           Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("获取K3单据列表共计" + (k3billlist?.Count.ToString() ?? "0") + "条");
+                           wl_instock("获取K3单据列表共计" + (k3billlist?.Count.ToString() ?? "0") + "条");
                            //过滤单据类型导入
                            //if (billtypelist == null)
                            //{
@@ -130,53 +144,53 @@ namespace Robam_Sync
                                //i => billtypelist.dataobjs/*.Where(i => i.orderSourceType == "调拨单据")*/.Select(i => i.orderTypeCode).ToList<string>().Contains(i.orderTypeCode)
                                i => !unsyncbilltype.Contains(i.orderTypeCode)
                                ).Select(i => i.orderNo).ToList();
-                           Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("筛选需要同步的信息");
+                           wl_instock("筛选需要同步的信息");
 
                            var unsynced = billlists.Except(k3billlist);
-                           Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("未同步单据共计" + (unsynced?.Count().ToString() ?? "0") + "条");
-                           Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("需要同步的信息共计" + unsynced.Count().ToString() + "条");
+                           wl_instock("未同步单据共计" + (unsynced?.Count().ToString() ?? "0") + "条");
+                           wl_instock("需要同步的信息共计" + unsynced.Count().ToString() + "条");
                            int _index = 0;
                            if (unsynced.Count() > 0)
                            {
                                foreach (var bill in unsynced)
                                {
                                    _index++;
-                                   Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("第" + _index.ToString() + "条信息，\n");
+                                   wl_instock("第" + _index.ToString() + "条信息，\n");
                                    var exOrderHeadersId = instockbill.crminvexportheaderss.Where(i => i.orderNo == bill).FirstOrDefault().exOrderHeadersId.ToString();
-                                   Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("第" + _index.ToString() + "条信息，获取单据详情\n");
+                                   wl_instock("第" + _index.ToString() + "条信息，获取单据详情\n");
                                    var detailbill = ins.GetOutstockbillDetail(exOrderHeadersId);
                                    //分解基础资料
                                    if (detailbill != null)
                                    {
-                                       Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("第" + _index.ToString() + "条信息，同步单据基础资料\n");
+                                       wl_instock("第" + _index.ToString() + "条信息，同步单据基础资料\n");
                                        if (Utils.Utils.SyncAllItemsFromInStockBill(detailbill, k3cloud, ins, "STK_InStock"))
                                        {
-                                           Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("第" + _index.ToString() + "条信息，同步单据基础资料\n");
+                                           wl_instock("第" + _index.ToString() + "条信息，同步单据基础资料\n");
                                            //同步单据
                                            //if (k3cloud.SyncPurchaseOrderBill(detailbill, ins, acct.FCompany) == KingdeeApi.SyncResult.AllSuccess)
                                            if (k3cloud.SyncInstockBill(detailbill, ins, acct.FCompany) == KingdeeApi.SyncResult.AllSuccess)
                                            {
-                                               Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("第" + _index.ToString() + "条信息，同步单据完成\n");
+                                               wl_instock("第" + _index.ToString() + "条信息，同步单据完成\n");
                                            }
                                            else
                                            {
-                                               Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("第" + _index.ToString() + "条信息，同步单据失败\n", true);
+                                               wl_instock("第" + _index.ToString() + "条信息，同步单据失败\n", true);
                                            }
                                        }
                                        else
                                        {
-                                           Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("同步信息时发生错误！\n", true);
+                                           wl_instock("同步信息时发生错误！\n", true);
                                        }
                                    }
                                    else
                                    {
-                                       Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("第" + _index.ToString() + "条信息，获取单据详情失败!\n", true);
+                                       wl_instock("第" + _index.ToString() + "条信息，获取单据详情失败!\n", true);
                                    }
                                }
                            }
                            else
                            {
-                               Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("选择期间没有未同步单据");
+                               wl_instock("选择期间没有未同步单据");
                                return;
                            }
                        });
@@ -189,7 +203,7 @@ namespace Robam_Sync
                     JObject jobj = new JObject();
                     jobj["Error"] = exp.Message;
                     jobj["Message"] = JsonConvert.SerializeObject(Sqlite_Helper_Static.read<Sqlite_Models_Instock>());
-                    Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("Exception:" + exp.Message, true);
+                    wl_instock("Exception:" + exp.Message, true);
                     return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Instock>().Select(i => i.Format()).ToList() };
                 }
                 finally
@@ -1546,6 +1560,7 @@ namespace Robam_Sync
                 Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("参数传递错误!", true);
                 return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Instock>().Select(i => i.Format()).ToList() };
             }
+            Sqlite_Helper_Static.deleteall<Sqlite_Models_Instock>();
             //Sqlite_Helper_Static.droptable<Sqlite_Models_Instock>();
             var startDate = DateTime.Parse(paras.FStartDate);
             var endDate = DateTime.Parse(paras.FEndDate);
@@ -1589,6 +1604,7 @@ namespace Robam_Sync
                 Utils.Utils.RecordStepNew<Sqlite_Models_Outstock>("参数传递错误!", true);
                 return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Outstock>().Select(i => i.Format()).ToList() };
             }
+            Sqlite_Helper_Static.deleteall<Sqlite_Models_Outstock>();
             //Sqlite_Helper_Static.droptable<Sqlite_Models_Outstock>();
             var startDate = DateTime.Parse(paras.FStartDate);
             var endDate = DateTime.Parse(paras.FEndDate);
@@ -1617,6 +1633,7 @@ namespace Robam_Sync
                 //判断配件出库
                 sync_PartsOutstockList(paras.FStartDate, paras.FEndDate);
             }
+
             return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Outstock>().Select(i => i.Format()).ToList() };
         }
 
@@ -1624,12 +1641,14 @@ namespace Robam_Sync
         [Route("api/syncqtxxtb")]
         public Sqlite_Models_Result_TableMessage syncqtxxtb([FromBody] Models.Paras paras)
         {
+            Sqlite_Helper_Static.deleteall<Sqlite_Models_QTXXTB>();
             return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_QTXXTB>().Select(i => i.Format()).ToList() };
         }
         [HttpPost]
         [Route("api/synczczldr")]
         public Sqlite_Models_Result_TableMessage synczczldr([FromBody] Models.Paras paras)
         {
+            Sqlite_Helper_Static.deleteall<Sqlite_Models_JCZLTB>();
             return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_JCZLTB>().Select(i => i.Format()).ToList() };
         }
         [HttpPost]
@@ -1639,6 +1658,7 @@ namespace Robam_Sync
             //产品出库
             //配件出库
             //
+            //Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("API响应" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff"), true);
             return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Instock>().Select(i => i.Format()).ToList() };
         }
         [HttpPost]
@@ -1658,6 +1678,36 @@ namespace Robam_Sync
         public Sqlite_Models_Result_TableMessage record_syncjczldr()
         {
             return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_JCZLTB>().Select(i => i.Format()).ToList() };
+        }
+        [HttpPost]
+        [Route("api/recordsyncautoinstock")]
+        public Sqlite_Models_Result_TableMessage record_syncautoinstock()
+        {
+            return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_AutoInstock>().Select(i => i.Format()).ToList() };
+        }
+        [HttpPost]
+        [Route("api/recordsyncautooutstock")]
+        public Sqlite_Models_Result_TableMessage record_syncautooutstock()
+        {
+            return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_AutoOutstock>().Select(i => i.Format()).ToList() };
+        }
+        [HttpPost]
+        [Route("api/execute_autoinstock")]
+        public IActionResult AutoInstock([FromBody] Models.Paras paras)
+        {
+            wl_instock = Utils.Utils.RecordStepNew<Sqlite_Models_AutoInstock>;
+            syncinstock(paras);
+            wl_instock = Utils.Utils.RecordStepNew<Sqlite_Models_Instock>;
+            return Ok(new { Message = "导入成功!" });
+        }
+        [HttpPost]
+        [Route("api/execute_autooutstock")]
+        public IActionResult AutoOutstock([FromBody] Models.Paras paras)
+        {
+            wl_instock = Utils.Utils.RecordStepNew<Sqlite_Models_AutoOutstock>;
+            syncoutstock(paras);
+            wl_instock = Utils.Utils.RecordStepNew<Sqlite_Models_Outstock>;
+            return Ok(new { Message = "导入成功!" });
         }
     }
 }
