@@ -19,6 +19,7 @@ using static System.Net.Mime.MediaTypeNames;
 using static Microsoft.ClearScript.V8.V8CpuProfile;
 using System.IO;
 using System.Collections;
+using System.Globalization;
 
 namespace Utils
 {
@@ -232,7 +233,15 @@ namespace Utils
             }
             void getCookie()
             {
-                var client = new RestClient(urls[UrlType.distribution_signin]) /*{ CookieContainer = new CookieContainer()}*/;
+                var client = new RestClient(
+
+                new HttpClient()
+                {
+                    BaseAddress = new Uri(
+                    urls[UrlType.distribution_signin]
+                    ),
+                    Timeout = TimeSpan.FromMinutes(20)
+                });
                 var request = new RestRequest();
                 request.Method = Method.Get;
                 //request.AddHeader("Cookie", "JSESSIONID=E8E0FEAA1D29A55379B5A4085E4850FE.s2");
@@ -273,7 +282,15 @@ namespace Utils
                     if (!m_login || (DateTime.Now - m_loginTime) > TimeSpan.FromMinutes(30))
                     {
                         getCookie();
-                        var client = new RestClient(urls[UrlType.distribution_signin]);
+                        var client = new RestClient(
+                            new HttpClient()
+                            {
+                                BaseAddress = new Uri(
+                                urls[UrlType.distribution_signin]
+                                ),
+                                Timeout = TimeSpan.FromMinutes(20)
+                            }
+                            );
                         var body = @"_eosFlowAction=login&userid=" + (m_Account?.Account ?? "") + "&password=" + (m_Account?.Password ?? "");
                         var request = new RestRequest();
                         request.Timeout = -1;
@@ -320,7 +337,15 @@ namespace Utils
             /// <returns></returns>
             public string GetoperatorId()
             {
-                var client = new RestClient("http://ims.hzrobam.com/robamIMS/com.saip.application.login.flow");
+                var client = new RestClient(
+                    new HttpClient()
+                    {
+                        BaseAddress = new Uri(
+                        "http://ims.hzrobam.com/robamIMS/com.saip.application.login.flow"
+                        ),
+                        Timeout = TimeSpan.FromMinutes(20)
+                    }
+                    );
 
                 var request = new RestRequest();
                 request.Method = Method.Get;
@@ -349,7 +374,15 @@ namespace Utils
             {
                 try
                 {
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/login/CrmSelectRoleAndSob.jsp");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://ims.hzrobam.com/robamIMS/login/CrmSelectRoleAndSob.jsp"
+                            ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
 
                     var request = new RestRequest();
                     request.Method = Method.Get;
@@ -379,7 +412,13 @@ namespace Utils
                 try
                 {
                     m_operatorId = GetoperatorId();
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/login/com.sie.ims.login.selectRole.getRolesByOperatorId.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                         BaseAddress = new Uri(
+                            "http://ims.hzrobam.com/robamIMS/login/com.sie.ims.login.selectRole.getRolesByOperatorId.biz.ext"
+                        ), Timeout = TimeSpan.FromMinutes(20) }
+                        );
                     var request = new RestRequest();
                     request.Method = Method.Get;
                     request.AddHeader("Accept", "*/*");
@@ -458,7 +497,15 @@ namespace Utils
             {
                 try
                 {
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/login/com.sie.ims.login.selectRole.getSobsByRoleID.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://ims.hzrobam.com/robamIMS/login/com.sie.ims.login.selectRole.getSobsByRoleID.biz.ext"
+                            ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -680,7 +727,15 @@ namespace Utils
                     System.DateTime startTime = TimeZoneInfo.ConvertTimeToUtc(new System.DateTime(1970, 1, 1));// Local. .ToLocalTime(new System.DateTime(1970, 1, 1)); // 当地时区
                     long timeStamp = (long)(DateTime.Now - startTime).TotalSeconds; // 相差秒数
                     string url = urls[UrlType.distribution_outstockdetail].Replace("%1", exOrderHeadersId).Replace("%2", timeStamp.ToString());
-                    var client = new RestClient(url);
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                        url
+                        ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     var request = new RestRequest();
                     request.Method = Method.Post;
                     request.Timeout = 600 * 1000;
@@ -737,7 +792,15 @@ namespace Utils
                     {
                         return null;
                     }
-                    var client = new RestClient(urls[UrlType.distribution_qrcode]);
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                        urls[UrlType.distribution_qrcode]
+                        ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     var json = JObject.Parse(@"{""criteria"":{""_entity"":""com.sie.crm.inv.robam.barcode.CrmInvExOrderLinesnV"",""_expr"":[{""orderNumber"":""" + billno + @""",""_op"":""=""},{""barcode"":"""",""_op"":""like""},{""materialCode"":"""",""_op"":""like""},{""materialName"":"""",""_op"":""like""},{""invType"":""IN"",""_op"":""=""},{""checkResult"":""C"",""_op"":""=""}],""_orderby"":[{""_sort"":""ASC"",""_property"":""materialCode""}]},""pageIndex"":0,""pageSize"":20,""sortField"":"""",""sortOrder"":"""",""page"":{""begin"":0,""length"":20,""isCount"":true}}");
                     var r = createRequest();
                     r.AddJsonBody(json.ToString(Newtonsoft.Json.Formatting.None));
@@ -889,7 +952,13 @@ namespace Utils
                             return null;
                         }
                     }
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/inv/com.sie.crm.ims.reportForms.crmInvexorderheaders.queryCrmInvExOrderHeaders.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                        "http://ims.hzrobam.com/robamIMS/inv/com.sie.crm.ims.reportForms.crmInvexorderheaders.queryCrmInvExOrderHeaders.biz.ext"
+                        ), Timeout = TimeSpan.FromMinutes(20) }
+                        );
                     //client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -940,7 +1009,15 @@ namespace Utils
                             return null;
                         }
                     }
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/inv/com.sie.crm.ims.reportForms.crmInvexorderheaders.queryCrmInvExOrderHeaders.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://ims.hzrobam.com/robamIMS/inv/com.sie.crm.ims.reportForms.crmInvexorderheaders.queryCrmInvExOrderHeaders.biz.ext"
+                        ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     //client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -991,7 +1068,15 @@ namespace Utils
                         }
                     }
 
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/inv/com.sie.crm.inv.crminvexportheadersbiz.getCrmInvExportHeadersById.biz.ext?exOrderHeadersId=" + exOrderHeadersId + "&_=" + Utils.GetMillisecondsTimeStemp().ToString());
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                        "http://ims.hzrobam.com/robamIMS/inv/com.sie.crm.inv.crminvexportheadersbiz.getCrmInvExportHeadersById.biz.ext?exOrderHeadersId=" + exOrderHeadersId + "&_=" + Utils.GetMillisecondsTimeStemp().ToString()
+                        ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     //client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Get;
@@ -1037,7 +1122,15 @@ namespace Utils
                         }
                     }
 
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/inv/invExport/com.sie.crm.inv.robam.crmbarcode.queryBarcodeList.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                        "http://ims.hzrobam.com/robamIMS/inv/invExport/com.sie.crm.inv.robam.crmbarcode.queryBarcodeList.biz.ext"
+                        ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     //client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -1138,6 +1231,77 @@ namespace Utils
                 }
                 return null;
             }
+
+            public CRM_OutstockList GetPartsReturnBack(string startDate, string endDate)
+            {
+                try
+                {
+                    Checklogin();
+                    RegistDefaultRole();
+                    //registMUOByRoleAndSob(@"{""roleId"":1604,""sobId"":1,""operatorId"":""4964588"",""rolename"":""仓库管理员"",""orgCode"":""zgs"",""orgName"":""老板电器账套""}");
+                    if (!m_login)
+                    {
+                        if (!SignIn())
+                        {
+                            return null;
+                        }
+                    }
+                    if (DateTime.Compare(m_loginTime, DateTime.Now) > 30 * 60)
+                    {
+                        if (!SignIn())
+                        {
+                            return null;
+                        }
+                    }
+                    //配件退回 生成红字入库单
+                    DateTime sd = new DateTime();
+                    DateTime ed = new DateTime();
+                    if(!DateTime.TryParse(startDate,out sd))
+                    {
+                        m_errorString = "开始日期未能转换成datetime!";
+                        return null;
+                    }
+                    if (!DateTime.TryParse(endDate, out ed))
+                    {
+                        m_errorString = "结束日期未能转换成datetime!";
+                        return null;
+                    }
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                        new HttpClient() { BaseAddress = new Uri("http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmvaluationapplication.queryValuationHeader.biz.ext"), Timeout = TimeSpan.FromMinutes(20) }
+                        ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
+                    //client.Timeout = -1;
+                    var request = new RestRequest();
+                    request.Method = Method.Post;
+                    request.AddHeader("Accept", "application/json, text/javascript, */*; q=0.01");
+                    request.AddHeader("Accept-Encoding", "gzip, deflate");
+                    request.AddHeader("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6");
+                    request.AddHeader("Cache-Control", "no-cache");
+                    request.AddHeader("Connection", "keep-alive");
+                    request.AddHeader("Content-Type", "application/json; charset=UTF-8");
+                    request.AddHeader("Cookie", (m_Token == "" ? "" : m_Token + ";") + " ; cod=826.377.136; csd=10011265");
+                    request.AddHeader("Host", "ims.hzrobam.com");
+                    request.AddHeader("Origin", "http://ims.hzrobam.com");
+                    request.AddHeader("Pragma", "no-cache");
+                    //request.AddHeader("Referer", "http://ims.hzrobam.com/robamIMS/so/order/ValuationApplicationView.jsp?processDefName=ValuationApplication&statusType=A&functionType=PARTS_APPLY&IntroducedBtn=&addLineBtn2=&removeLineBtn=&addLineBtn=&zbPrint=&btnPrint=&submitBtn=&saveBtn=&printBathBtn2=&deleteBtn=&editBtn=&addBtn=&_t=109845");
+                    request.AddHeader("UserAgent" , " Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.54");
+                    request.AddHeader("X-Requested-With", " XMLHttpRequest");
+                    var body = @"{""functionType"":""PARTS_APPLY"",""criteria"":{""_entity"":""com.sie.crm.pub.dataset.soEntity.CrmSoOrderHeaderQv1"",""_expr"":[{""orderNum"":"""",""_op"":""=""},{""orderTypeName"":"""",""_op"":""=""},{""customerName"":"""",""_op"":""like""},{""creationDate"":""" + sd.ToString("yyyy-MM-dd HH:mm:ss") + @""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""creationDate"":""" + ed.ToString("yyyy-MM-dd HH:mm:ss") + @""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""salesAreaName"":"""",""_op"":""like""},{""deliveryCustomerName"":"""",""_op"":""like""},{""status"":"""",""_op"":""=""},{""customerTypeName"":"""",""_op"":""like""},{""deliveryCustomerTypeName"":"""",""_op"":""like""},{""superiorCustomerName"":"""",""_op"":""like""},{""goodsTypeName"":"""",""_op"":""like""},{""writeRaIfFlag"":"""",""_op"":""=""},{""exportFlag"":"""",""_op"":""=""},{""exportFinishFlag"":"""",""_op"":""=""},{""functionType"":""PARTS_APPLY"",""_op"":""=""},{""isInTransit"":"""",""_op"":""=""},{""needErpFlag"":"""",""_op"":""=""},{""erpFlag"":"""",""_op"":""=""},{""writeInvIfFlag"":"""",""_op"":""=""},{""acUserId"":""4964588"",""_op"":""=""},{""branchApprovalTime"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""branchApprovalTime"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""lastUpdatedName"":"""",""_op"":""like""},{""orderCommitTime"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""orderCommitTime"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""}],""_orderby"":[{""_sort"":""desc"",""_property"":""orderId""}]},""pageIndex"":0,""pageSize"":20,""sortField"":"""",""sortOrder"":"""",""page"":{""begin"":0,""length"":20,""isCount"":true}}";
+                    request.AddParameter("application/json", body, ParameterType.RequestBody);
+                    RestResponse response = client.Execute(request);
+                    Console.WriteLine(response.Content);
+                }
+                catch(Exception exp)
+                {
+                    Logger.log(exp.Message);
+                }
+                return null;
+            }
             public CRM_OutStockDetail GetPartsInstockBillDetail(string exOrderHeadersId)
             {
                 try
@@ -1214,7 +1378,13 @@ namespace Utils
                             return null;
                         }
                     }
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmvaluationapplication.queryValuationHeader.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmvaluationapplication.queryValuationHeader.biz.ext"
+                            ), Timeout = TimeSpan.FromMinutes(20) }
+                        );
                     //client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -1263,7 +1433,15 @@ namespace Utils
                             return null;
                         }
                     }
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmsoorderheaderbiz.getCrmSoOrderHeaderById.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                        "http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmsoorderheaderbiz.getCrmSoOrderHeaderById.biz.ext"
+                        ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     //client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -1341,7 +1519,15 @@ namespace Utils
                             return null;
                         }
                     }
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmvaluationapplication.queryValuationHeader.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                        "http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmvaluationapplication.queryValuationHeader.biz.ext"
+                        ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     //client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -1390,7 +1576,25 @@ namespace Utils
                             return null;
                         }
                     }
-                    var client = new RestClient(new HttpClient() { BaseAddress = new Uri("http://ims.hzrobam.com/robamIMS/inv/invExport/com.sie.crm.ims.reportForms.crmInvexorderheaders.queryCrmInvExOrderHeaders.biz.ext"), Timeout = TimeSpan.FromMinutes(20) } );
+
+                    DateTime sd = new DateTime();
+                    DateTime ed = new DateTime();
+                    if(!DateTime.TryParse(startDate,out sd))
+                    {
+                        m_errorString = "错误:startDate转换为DataTime发生错误!";
+                        return null;
+                    }
+                    if(!DateTime.TryParse(endDate,out ed))
+                    {
+                        m_errorString = "错误:endDate转换为DataTime发生错误!";
+                        return null;
+                    }
+
+                    var client = new RestClient(
+                        new HttpClient() { BaseAddress = new Uri(
+                            "http://ims.hzrobam.com/robamIMS/inv/invExport/com.sie.crm.ims.reportForms.crmInvexorderheaders.queryCrmInvExOrderHeaders.biz.ext"
+                        ), Timeout = TimeSpan.FromMinutes(20) } );
+
                     var request = new RestRequest();
                     request.Method = Method.Post;
                     request.Timeout = 0;
@@ -1406,11 +1610,12 @@ namespace Utils
                     request.AddHeader("UserAgent","Mozilla /5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.52");
                     request.AddHeader("X-Requested-With", " XMLHttpRequest");
                     var body = @"{""criteria"":{""_entity"":""com.sie.crm.pub.dataset.INVConfig.CrmInvExOrderHeadersV"",""_expr"":[{""sourceOrderNo"":"""",""_op"":""like""},{""orderNo"":"""",""_op"":""like""},{""sourceType"":"""",""_op"":""like""},{""status"":"""",""_op"":""in""},{""reservationDeliveryDate"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""temp"":""8"",""_op"":""=""},{""reservationDeliveryDate"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""inventoryCode"":"""",""_op"":""=""},{""receiveInventoryCode"":"""",""_op"":""=""},{""dmdNum"":"""",""_op"":""like""},{""receiptFlag"":"""",""_op"":""=""},{""customerReceiveFlag"":"""",""_op"":""=""},{""locationDesc"":"""",""_op"":""like""},{""receiveLocationDesc"":"""",""_op"":""like""},{""orderSourceTypeCode"":"""",""_op"":""like""},{""customerTypeId"":"""",""_op"":""=""},{""productOrgName"":"""",""_op"":""=""},{""vendorName"":"""",""_op"":""like""},{""salesAreaName"":"""",""_op"":""like""},{""exportConfirmDate"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""exportConfirmDate"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""receiveDate"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""receiveDate"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""productOrgName2"":"""",""_op"":""=""},{""customerName"":"""",""_op"":""like""},{""customerCode"":"""",""_op"":""=""},{""orderTypeId"":"""",""_op"":""=""},{""salesAreaName"":"""",""_op"":""like""},{""orderTypeName"":"""",""_op"":""like""},"+
-                    @"{""orderDate"":""" + startDate + @""",""_op"":"">=""}," +
-                    @"{""orderDate"":""" + endDate + @""",""_op"":""<=""},{""_op"":""like"",""exportConfirmByName"":""""},{""_op"":""="",""actualQuantityFlag"":""""},{""_op"":""="",""printFlag"":""""},{""_op"":""="",""lastUpdatedByName"":""""},{""_op"":""like"",""material_desc_op"":""""},{""_op"":""like"",""material_code_op"":""""},{""_op"":""like"",""product_type_name_op"":""""},{""_op"":""like"",""product_type_code_op"":""""},{""is_lock_flag"":"""",""_op"":""=""},{""_op"":""=""},{""sortField1"":"""",""sortField2"":"""",""_op"":""=""},{""deliveryCustomerCode"":"""",""_op"":""=""},{""deliveryCustomerName"":"""",""_op"":""=""},{""fxOrderNo"":"""",""fxOrderNo_op"":""like"",""contactName"":"""",""_op"":""like"",""contactTel"":"""",""chauffeur"":"""",""sourceNo"":""""},{""partorgood"":""PART"",""_op"":""=""},{""lastupdateby"":"""",""_op"":""like""}]},""pageIndex"":0,""pageSize"":20,""sortField"":"""",""sortOrder"":"""",""page"":{""begin"":0,""length"":20,""isCount"":true}}";
+                    @"{""orderDate"":""" + sd.ToString("yyyy-MM-dd HH:mm:ss") + @""",""_op"":"">=""}," +
+                    @"{""orderDate"":""" + ed.ToString("yyyy-MM-dd HH:mm:ss") + @""",""_op"":""<=""},{""_op"":""like"",""exportConfirmByName"":""""},{""_op"":""="",""actualQuantityFlag"":""""},{""_op"":""="",""printFlag"":""""},{""_op"":""="",""lastUpdatedByName"":""""},{""_op"":""like"",""material_desc_op"":""""},{""_op"":""like"",""material_code_op"":""""},{""_op"":""like"",""product_type_name_op"":""""},{""_op"":""like"",""product_type_code_op"":""""},{""is_lock_flag"":"""",""_op"":""=""},{""_op"":""=""},{""sortField1"":"""",""sortField2"":"""",""_op"":""=""},{""deliveryCustomerCode"":"""",""_op"":""=""},{""deliveryCustomerName"":"""",""_op"":""=""},{""fxOrderNo"":"""",""fxOrderNo_op"":""like"",""contactName"":"""",""_op"":""like"",""contactTel"":"""",""chauffeur"":"""",""sourceNo"":""""},{""partorgood"":""PART"",""_op"":""=""},{""lastupdateby"":"""",""_op"":""like""}]},""pageIndex"":0,""pageSize"":20,""sortField"":"""",""sortOrder"":"""",""page"":{""begin"":0,""length"":20,""isCount"":true}}";
                     request.AddParameter("application/json", body, ParameterType.RequestBody);
                     RestResponse response = client.Execute(request);
                     Console.WriteLine(response.Content);
+
                     return JObject.Parse(response.Content).ToObject<CRM_OutstockList>();
                 }
                 catch (Exception exp)
@@ -1439,7 +1644,13 @@ namespace Utils
                             return null;
                         }
                     }
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmsoorderheaderbiz.getCrmSoOrderHeaderById.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmsoorderheaderbiz.getCrmSoOrderHeaderById.biz.ext"
+                            ), Timeout = TimeSpan.FromMinutes(20) }
+                        );
                    
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -1502,7 +1713,8 @@ namespace Utils
                 try
                 {
                     Checklogin();
-                    registMUOByRoleAndSob(@"{""roleId"":1604,""sobId"":1,""operatorId"":""4964588"",""rolename"":""仓库管理员"",""orgCode"":""zgs"",""orgName"":""老板电器账套""}");
+                    //registMUOByRoleAndSob(@"{""roleId"":1604,""sobId"":1,""operatorId"":""4964588"",""rolename"":""仓库管理员"",""orgCode"":""zgs"",""orgName"":""老板电器账套""}");
+                    RegistDefaultRole();
                     if (!m_login)
                     {
                         if (!SignIn())
@@ -1517,7 +1729,28 @@ namespace Utils
                             return null;
                         }
                     }
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/inv/com.sie.crm.ims.reportForms.crmInvexorderheaders.queryCrmInvExOrderHeaders.biz.ext");
+                    DateTime sd = new DateTime();
+                    DateTime ed = new DateTime();
+                    if(!DateTime.TryParse(startDate,out sd))
+                    {
+                        m_errorString = "错误:startDate无法转换为DateTime!";
+                        return null;
+                    }
+                    if(!DateTime.TryParse(endDate,out ed))
+                    {
+                        m_errorString = "错误:endDate无法转换为DateTime!";
+                        return null;
+                    }
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://ims.hzrobam.com/robamIMS/inv/com.sie.crm.ims.reportForms.crmInvexorderheaders.queryCrmInvExOrderHeaders.biz.ext"
+                            ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+
+                        );
                     var request = new RestRequest();
                     request.Method = Method.Post;
                     request.AddHeader("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -1533,10 +1766,11 @@ namespace Utils
                     request.AddHeader("Referer", "http://ims.hzrobam.com/robamIMS/inv/Confirm.jsp?partOrGood=GOOD&functionType=2&menuId=2&invmyNo=&printBathBtn3=&printBathBtn4=&invmyHZ=&isBtn4=&cancel=&exportHeadData=&startUpload=&invmy=&synFxBtn=&updateBtn=&printBathBtn2=&isBtn2=&isBtn=&saveBtn=&editBtn=&_t=7088");
                     request.AddHeader("UserAgent","Mozilla /5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.42");
                     request.AddHeader("X-Requested-With", "XMLHttpRequest");
-                    var body = @"{""criteria"":{""_entity"":""com.sie.crm.pub.dataset.INVConfig.CrmInvExOrderHeadersV"",""_expr"":[{""sourceOrderNo"":"""",""_op"":""like""},{""orderNo"":"""",""_op"":""like""},{""sourceType"":"""",""_op"":""like""},{""status"":"""",""_op"":""=""},{""orgId"":"""",""_op"":""=""},{""temp"":""2"",""_op"":""=""},{""productOrgId"":"""",""_op"":""=""},{""inventoryCode"":"""",""_op"":""=""},{""receiveInventoryCode"":"""",""_op"":""=""},{""dmdNum"":"""",""_op"":""like""},{""receiptFlag"":"""",""_op"":""=""},{""customerReceiveFlag"":"""",""_op"":""=""},{""locationDesc"":"""",""_op"":""like""},{""receiveLocationDesc"":"""",""_op"":""like""},{""orderSourceTypeCode"":"""",""_op"":""like""},{""customerTypeId"":"""",""_op"":""=""},{""productOrgName"":"""",""_op"":""=""},{""vendorName"":"""",""_op"":""like""},{""salesAreaName"":"""",""_op"":""like""},{""exportConfirmDate"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""exportConfirmDate"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""receiveDate"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""receiveDate"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""productOrgName2"":""配件"",""_op"":""=""},{""customerName"":"""",""_op"":""=""},{""customerCode"":"""",""_op"":""=""},{""orderTypeId"":"""",""_op"":""=""},{""salesAreaName"":"""",""_op"":""like""},{""orderTypeName"":"""",""_op"":""like""},{""orderDate"":""" + 
-                        startDate + @""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""orderDate"":""" + 
-                        endDate + @""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""_op"":""like"",""exportConfirmByName"":""""},{""_op"":""=""},{""_op"":""="",""printFlag"":""""},{""_op"":""="",""lastUpdatedByName"":""""},{""_op"":""like"",""material_desc_op"":""""},{""_op"":""like"",""material_code_op"":""""},{""_op"":""like"",""product_type_name_op"":""""},{""_op"":""like"",""product_type_code_op"":""""},{""is_lock_flag"":"""",""_op"":""=""},{""_op"":""=""},{""_op"":""=""},{""deliveryCustomerCode"":"""",""_op"":""=""},{""deliveryCustomerName"":"""",""_op"":""=""},{""fxOrderNo"":"""",""_op"":""like"",""chauffeur"":"""",""vehicleBrand"":"""",""contactTel"":"""",""createdByName"":"""",""materialCode"":"""",""receiptStatusName"":"""",""exFlag"":"""",""receiptFlag"":"""",""contractNumber"":"""",""inceptAreaName"":"""",""strategyContract"":"""",""engineeringProject"":"""",""transType"":""""},{""partorgood"":""GOOD"",""_op"":""=""},{},{},{}]},""pageIndex"":0,""pageSize"":500,""sortField"":"""",""sortOrder"":"""",""page"":{""begin"":0,""length"":500,""isCount"":true}}";
+                    var body = @"{""criteria"":{""_entity"":""com.sie.crm.pub.dataset.INVConfig.CrmInvExOrderHeadersV"",""_expr"":[{""sourceOrderNo"":"""",""_op"":""like""},{""orderNo"":"""",""_op"":""like""},{""sourceType"":"""",""_op"":""like""},{""status"":"""",""_op"":""=""},{""orgId"":"""",""_op"":""=""},{""temp"":""2"",""_op"":""=""},{""productOrgId"":"""",""_op"":""=""},{""inventoryCode"":"""",""_op"":""=""},{""receiveInventoryCode"":"""",""_op"":""=""},{""dmdNum"":"""",""_op"":""like""},{""receiptFlag"":"""",""_op"":""=""},{""customerReceiveFlag"":"""",""_op"":""=""},{""locationDesc"":"""",""_op"":""like""},{""receiveLocationDesc"":"""",""_op"":""like""},{""orderSourceTypeCode"":"""",""_op"":""like""},{""customerTypeId"":"""",""_op"":""=""},{""productOrgName"":"""",""_op"":""=""},{""vendorName"":"""",""_op"":""like""},{""salesAreaName"":"""",""_op"":""like""},{""exportConfirmDate"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""exportConfirmDate"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""receiveDate"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""receiveDate"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""productOrgName2"":""配件"",""_op"":""=""},{""customerName"":"""",""_op"":""=""},{""customerCode"":"""",""_op"":""=""},{""orderTypeId"":"""",""_op"":""=""},{""salesAreaName"":"""",""_op"":""like""},{""orderTypeName"":"""",""_op"":""like""},{""orderDate"":""" +
+                        sd.ToString("yyyy-MM-dd HH:mm:ss") + @""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""orderDate"":""" +
+                        ed.ToString("yyyy-MM-dd HH:mm:ss") + @""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""_op"":""like"",""exportConfirmByName"":""""},{""_op"":""=""},{""_op"":""="",""printFlag"":""""},{""_op"":""="",""lastUpdatedByName"":""""},{""_op"":""like"",""material_desc_op"":""""},{""_op"":""like"",""material_code_op"":""""},{""_op"":""like"",""product_type_name_op"":""""},{""_op"":""like"",""product_type_code_op"":""""},{""is_lock_flag"":"""",""_op"":""=""},{""_op"":""=""},{""_op"":""=""},{""deliveryCustomerCode"":"""",""_op"":""=""},{""deliveryCustomerName"":"""",""_op"":""=""},{""fxOrderNo"":"""",""_op"":""like"",""chauffeur"":"""",""vehicleBrand"":"""",""contactTel"":"""",""createdByName"":"""",""materialCode"":"""",""receiptStatusName"":"""",""exFlag"":"""",""receiptFlag"":"""",""contractNumber"":"""",""inceptAreaName"":"""",""strategyContract"":"""",""engineeringProject"":"""",""transType"":""""},{""partorgood"":""GOOD"",""_op"":""=""},{},{},{}]},""pageIndex"":0,""pageSize"":500,""sortField"":"""",""sortOrder"":"""",""page"":{""begin"":0,""length"":500,""isCount"":true}}";
                     request.AddParameter("application/json", body, ParameterType.RequestBody);
+
                     RestResponse response = client.Execute(request);
                     Console.WriteLine();
                     return JObject.Parse(response.Content).ToObject<CRM_OutstockList>();
@@ -1568,7 +1802,15 @@ namespace Utils
                             return null;
                         }
                     }
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/inv/com.sie.crm.inv.crminvexportheadersbiz.getCrmInvExportHeadersById.biz.ext?exOrderHeadersId=" + exOrderHeadersId + @"&_=" + Utils.GetMillisecondsTimeStemp().ToString());
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://ims.hzrobam.com/robamIMS/inv/com.sie.crm.inv.crminvexportheadersbiz.getCrmInvExportHeadersById.biz.ext?exOrderHeadersId=" + exOrderHeadersId + @"&_=" + Utils.GetMillisecondsTimeStemp().ToString()
+                            ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     //client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Get;
@@ -1617,7 +1859,13 @@ namespace Utils
                             return null;
                         }
                     }
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/inv/invExport/com.sie.crm.inv.robam.crmbarcode.queryBarcodeList.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://ims.hzrobam.com/robamIMS/inv/invExport/com.sie.crm.inv.robam.crmbarcode.queryBarcodeList.biz.ext"
+                            ), Timeout = TimeSpan.FromMinutes(20) }
+                        );
                   
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -1784,7 +2032,15 @@ namespace Utils
                         return null;
                     }
                     Func<string, CRM_ItemDetail> Act = new Func<string, CRM_ItemDetail>((json) => {
-                        var client = new RestClient("http://ims.hzrobam.com/robamIMS/baseconfig/materias/com.sie.crm.pub.baseconfig.crmecreference.qeryMaterialsPart.biz.ext");
+                        var client = new RestClient(
+                            new HttpClient()
+                            {
+                                BaseAddress = new Uri(
+                            "http://ims.hzrobam.com/robamIMS/baseconfig/materias/com.sie.crm.pub.baseconfig.crmecreference.qeryMaterialsPart.biz.ext"
+                            ),
+                                Timeout = TimeSpan.FromMinutes(20)
+                            }
+                            );
                         var request = new RestRequest();
                         request.Method = Method.Post;
                         request.AddHeader("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -1859,7 +2115,13 @@ namespace Utils
             {
                 try
                 {
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/price/com.sie.crm.price.crmpricebiz.queryCrmPrices.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                        "http://ims.hzrobam.com/robamIMS/price/com.sie.crm.price.crmpricebiz.queryCrmPrices.biz.ext"
+                        ), Timeout = TimeSpan.FromMinutes(20) }
+                        );
                     var request = new RestRequest();
                     request.Method = Method.Post;
                     request.AddHeader("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -1914,7 +2176,15 @@ namespace Utils
                         return null;
                     }
 
-                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/price/com.sie.crm.price.crmpricebiz.queryline.biz.ext");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                        "http://ims.hzrobam.com/robamIMS/price/com.sie.crm.price.crmpricebiz.queryline.biz.ext"
+                        ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     //client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -1976,7 +2246,15 @@ namespace Utils
             {
                 try
                 {
-                    var client = new RestClient("http://fx.hzrobam.com/DWGateway/restful/Sys/ILoginService/login");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                        "http://fx.hzrobam.com/DWGateway/restful/Sys/ILoginService/login"
+                        ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     //client.Timeout = -1;
                     //var request = new RestRequest(Method.POST);
                     var request = new RestRequest();
@@ -2033,7 +2311,13 @@ namespace Utils
                         return null;
                     }
                     Checklogin();
-                    var client = new RestClient("http://fx.hzrobam.com/DWGateway/restful/Order/ISamSalesorderMasterService/getSalesOrderListNew");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://fx.hzrobam.com/DWGateway/restful/Order/ISamSalesorderMasterService/getSalesOrderListNew"
+                            ), Timeout = TimeSpan.FromMinutes(20) }
+                        );
                     ///client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -2071,7 +2355,15 @@ namespace Utils
                 try
                 {
                     Checklogin();
-                    var client = new RestClient("http://fx.hzrobam.com/DWGateway/restful/Order/ISamSalesorderMasterService/getOrderInfoAllByNo");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://fx.hzrobam.com/DWGateway/restful/Order/ISamSalesorderMasterService/getOrderInfoAllByNo"
+                            ),
+                                Timeout = TimeSpan.FromMinutes(20)
+                            }
+                        );
 
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -2111,7 +2403,13 @@ namespace Utils
                 try
                 {
                     Checklogin();
-                    var client = new RestClient("http://fx.hzrobam.com/DWGateway/restful/Base/IChannelBusinessService/getChannelBussinessDetail");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://fx.hzrobam.com/DWGateway/restful/Base/IChannelBusinessService/getChannelBussinessDetail"
+                            ), Timeout = TimeSpan.FromMinutes(20) }
+                        );
                     //client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -2329,7 +2627,15 @@ namespace Utils
                 try
                 {
                     Checklogin();
-                    var client = new RestClient(@"http://fx.hzrobam.com/WebReport/decision/view/report?op=fr_dialog&cmd=parameters_d");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            @"http://fx.hzrobam.com/WebReport/decision/view/report?op=fr_dialog&cmd=parameters_d"
+                            ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     var request = new RestRequest();
                     request.Method = Method.Post;
                     request.AddHeader("Accept", "*/*");
@@ -2370,7 +2676,16 @@ namespace Utils
                     Checklogin();
                     string startdate = "2010-01-01 00:00:00";
                     string enddate = "2050-01-01 00:00:00";
-                    var client = new RestClient(@"http://fx.hzrobam.com/WebReport/decision/view/report?op=fr_dialog&cmd=parameters_d");
+                    var client = new RestClient(
+
+                    new HttpClient()
+                    {
+                        BaseAddress = new Uri(
+                    @"http://fx.hzrobam.com/WebReport/decision/view/report?op=fr_dialog&cmd=parameters_d"
+                    ),
+                        Timeout = TimeSpan.FromMinutes(20)
+                    }
+                    );
                     var request = new RestRequest();
                     request.Method = Method.Post;
                     request.AddHeader("Accept", "*/*");
@@ -2410,7 +2725,13 @@ namespace Utils
                 try
                 {
                     Checklogin();
-                    var client = new RestClient(@"http://fx.hzrobam.com/WebReport/decision/view/report?_=" + Utils.GetMillisecondsTimeStemp().ToString() + "&__boxModel__=true&op=page_content&pn=" + page.ToString() + "&__webpage__=true&_paperWidth=1106&_paperHeight=267&__fit__=false");
+                    var client = new RestClient(
+                       new HttpClient()
+                       {
+                           BaseAddress = new Uri(
+                        @"http://fx.hzrobam.com/WebReport/decision/view/report?_=" + Utils.GetMillisecondsTimeStemp().ToString() + "&__boxModel__=true&op=page_content&pn=" + page.ToString() + "&__webpage__=true&_paperWidth=1106&_paperHeight=267&__fit__=false"
+                        ), Timeout = TimeSpan.FromMinutes(20) }
+                        );
                     var request = new RestRequest();
                     request.Method = Method.Get;
                     request.Timeout = 60 * 1000;
@@ -2699,9 +3020,16 @@ namespace Utils
                 {
                     Checklogin();
                     var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
                     "http://fx.hzrobam.com/WebReport/decision/view/report?_=" +
                     Utils.GetMillisecondsTimeStemp().ToString() +
-                    @"&__boxModel__=true&op=page_content&pn=1&__webpage__=true&_paperWidth=514&_paperHeight=613&__fit__=false");
+                    @"&__boxModel__=true&op=page_content&pn=1&__webpage__=true&_paperWidth=514&_paperHeight=613&__fit__=false"
+                    ),
+                                                Timeout = TimeSpan.FromMinutes(20)
+                                            }
+                    );
                     var request = new RestRequest();
                     request.Method = Method.Get;
                     request.AddHeader("Accept", "text/html, */*; q=0.01");
@@ -2803,7 +3131,15 @@ namespace Utils
                         ins.para.fine_hyperlink +
                         "%2522%257D" +
                         "&_=" + timestemp;
-                    var client = new RestClient(url);
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            url
+                            ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     //client.Timeout = -1;
                     var request = new RestRequest();
                     request.Method = Method.Get;
@@ -2839,7 +3175,9 @@ namespace Utils
                     Checklogin();
                     var client = new RestClient
                     (
-
+                            new HttpClient()
+                            {
+                                BaseAddress = new Uri(
                             //"http://fx.hzrobam.com/WebReport/decision/view/report?viewlet=Robam/drp_rpm_s01.cpt" +
                             //"&op=page" +
                             //"&programCode=fr://drp_rpm_s01" +
@@ -2861,6 +3199,9 @@ namespace Utils
                             ins.para.fine_hyperlink +
                             "%2522%257D" +
                             "&_=" + Utils.GetMillisecondsTimeStemp().ToString()
+                            ),
+                                Timeout = TimeSpan.FromMinutes(20)
+                            }
                       );
 
                     var request = new RestRequest();
@@ -2927,7 +3268,15 @@ namespace Utils
                 try
                 {
                     Checklogin();
-                    var client = new RestClient("http://fx.hzrobam.com/DWGateway/restful/Base/IOrganizationSiteBasedService/getOrganizationBasedList");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://fx.hzrobam.com/DWGateway/restful/Base/IOrganizationSiteBasedService/getOrganizationBasedList"
+                            ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     var request = new RestRequest();
                     request.Method = Method.Post;
                     request.AddHeader("Accept", "application/json, text/plain, */*");
@@ -2960,7 +3309,15 @@ namespace Utils
                 try
                 {
                     Checklogin();
-                    var client = new RestClient("http://fx.hzrobam.com/DWGateway/restful/Base/IOrganizationSiteBasedService/getOrganizationBasedDetail");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://fx.hzrobam.com/DWGateway/restful/Base/IOrganizationSiteBasedService/getOrganizationBasedDetail"
+                            ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     var request = new RestRequest();
                     request.Method = Method.Post;
                     request.AddHeader("Accept", "application/json, text/plain, */*");
@@ -2993,7 +3350,15 @@ namespace Utils
                 try
                 {
                     Checklogin();
-                    var client = new RestClient("http://fx.hzrobam.com/DWGateway/restful/Base/IEmployeeGuideService/getEmployeeGuideList");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://fx.hzrobam.com/DWGateway/restful/Base/IEmployeeGuideService/getEmployeeGuideList"
+                            ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     var request = new RestRequest();
                     request.Method = Method.Post;
                     request.AddHeader("Accept", "application/json, text/plain, */*");
@@ -3026,7 +3391,15 @@ namespace Utils
                 try
                 {
                     Checklogin();
-                    var client = new RestClient("http://fx.hzrobam.com/DWGateway/restful/Base/ISccCodeServrce/getSccCode");
+                    var client = new RestClient(
+                        new HttpClient()
+                        {
+                            BaseAddress = new Uri(
+                            "http://fx.hzrobam.com/DWGateway/restful/Base/ISccCodeServrce/getSccCode"
+                            ),
+                            Timeout = TimeSpan.FromMinutes(20)
+                        }
+                        );
                     var request = new RestRequest();
                     request.Method = Method.Post;
                     request.AddHeader("Accept", "application/json, text/plain, */*");

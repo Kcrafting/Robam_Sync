@@ -30,6 +30,7 @@ namespace Robam_Sync
         volatile static bool sg_sync_syncallitem_Running = false;
         volatile static bool sg_sync_syncallitemparts_Running = false;
         volatile static bool sg_sync_syncallishops_Running = false;
+        volatile static bool sg_sync_syncreturnback_Running = false;
         static bool K3cloud_Init = false;
         public Robam_Sync()
         {
@@ -62,7 +63,8 @@ namespace Robam_Sync
         public delegate void WriteLog(string txt, bool iserror = false);
         public static WriteLog wl_instock { get; set; } = Utils.Utils.RecordStepNew<Sqlite_Models_Instock>;
         public static WriteLog wl_outstock { get; set; } = Utils.Utils.RecordStepNew<Sqlite_Models_Outstock>;
-        
+        public static WriteLog wl_qtxxtb { get; set; } = Utils.Utils.RecordStepNew<Sqlite_Models_QTXXTB>;
+        public static WriteLog wl_jczldr { get; set; } = Utils.Utils.RecordStepNew<Sqlite_Models_JCZLTB>;
         [HttpPost]
         [Route("api/syncinstockbill")]
         public Sqlite_Models_Result_TableMessage sync_StockList([FromForm] string startDate, string endDate)
@@ -245,22 +247,22 @@ namespace Robam_Sync
                          DateTime _StartDate, _EndDate;
                          if (!DateTime.TryParse(startDate, out _StartDate))
                          {
-                             Utils.Utils.RecordStepForOutStock("传入的开始日期参数不能转换为日期！", true);
+                             wl_outstock("传入的开始日期参数不能转换为日期！", true);
                              return;
                          }
                          if (!DateTime.TryParse(endDate, out _EndDate))
                          {
-                             Utils.Utils.RecordStepForOutStock("传入的结束日期参数不能转换为日期", true);
+                             wl_outstock("传入的结束日期参数不能转换为日期", true);
                              return;
                          }
                          if (!(_EndDate - _StartDate > TimeSpan.FromHours(6)))
                          {
-                             Utils.Utils.RecordStepForOutStock("日期间隔时间太短！", true);
+                             wl_outstock("日期间隔时间太短！", true);
                              return;
                          }
                          if (_EndDate - _StartDate > TimeSpan.FromDays(2))
                          {
-                             Utils.Utils.RecordStepForOutStock("日期间隔时间不能超过2天，否则将导致导入时间过长!", true);
+                             wl_outstock("日期间隔时间不能超过2天，否则将导致导入时间过长!", true);
                              return;
                          }
                          KingdeeApi k3cloud = new KingdeeApi();
@@ -268,14 +270,14 @@ namespace Robam_Sync
                          var unsyncbilltype = k3cloud.UnsyncBillType("PLYE_SaleOrder");
                          if (unsyncbilltype == null)
                          {
-                             Utils.Utils.RecordStepForOutStock("单据列表获取失败!", true);
+                             wl_outstock("单据列表获取失败!", true);
                              return;
                          }
 
                          var acc = Utils.KingdeeApi.GetRobamAccountListForList()?.Where(i => i.ServerType == RobamApi.ServerType.Robam_Distribution)?.FirstOrDefault();
                          if (acc == null)
                          {
-                             Utils.Utils.RecordStepForOutStock("获取老板分销系统账户失败！");
+                             wl_outstock("获取老板分销系统账户失败！");
                          }
                          var crm = new RobamApi.Robam_CRM(new RobamApi.UserAccount() { FAccount = acct.FAccount, FPWD = acct.FPWD });
                          var robam = new RobamApi.Robam_Distribution(new RobamApi.UserAccount() { FAccount = acc.FAccount, FPWD = acc.FPWD });
@@ -286,12 +288,12 @@ namespace Robam_Sync
                          //var list = JsonConvert.DeserializeObject<List<DIS_SaleReport>>(js);
                          if (list == null)
                          {
-                             Utils.Utils.RecordStepForOutStock("获取销售订单详情失败!", true);
+                             wl_outstock("获取销售订单详情失败!", true);
                              return;
                          }
                          if (list.Count <= 0)
                          {
-                             Utils.Utils.RecordStepForOutStock("获取销售订单的数量为零，不需要同步!", true);
+                             wl_outstock("获取销售订单的数量为零，不需要同步!", true);
                              return;
                          }
                          //var list = Sqlite_Helper_Static.read<DIS_SaleReport>();
@@ -301,45 +303,45 @@ namespace Robam_Sync
                          //}
                          if (Utils.Utils.SyncAllItemsFromOutStockBill(list, k3cloud, crm, robam))
                          {
-                             Utils.Utils.RecordStepForOutStock("同步基础资料失败!");
+                             wl_outstock("同步基础资料失败!");
                          }
                          else
                          {
-                             Utils.Utils.RecordStepForOutStock("同步基础资料成功!");
+                             wl_outstock("同步基础资料成功!");
                          }
-                         Utils.Utils.RecordStepForOutStock("开始组合json");
+                         wl_outstock("开始组合json");
                          var bills = robam.GetSaleOrder(list, k3cloud);
                          if (bills == null)
                          {
-                             Utils.Utils.RecordStepForOutStock("销售订单列表转换JSON失败!", true);
+                             wl_outstock("销售订单列表转换JSON失败!", true);
                              return;
                          }
                          if (bills.Count <= 0)
                          {
-                             Utils.Utils.RecordStepForOutStock("销售订单列表转换JSON后数量为零，不需要同步!", true);
+                             wl_outstock("销售订单列表转换JSON后数量为零，不需要同步!", true);
                              return;
                          }
                          var existsbilllist = k3cloud.GetSyncedBillNoList(startDate, endDate, "PLYE_SaleOrder");
                          var needimport = bills.Where(i => !existsbilllist.Contains(i.Model.FBillNo) && !unsyncbilltype.Contains(i.Model.FBillTypeID.FNumber)).ToList();
                          if (needimport == null)
                          {
-                             Utils.Utils.RecordStepForOutStock("销售订单除重后为null!", true);
+                             wl_outstock("销售订单除重后为null!", true);
                              return;
                          }
                          if (needimport.Count <= 0)
                          {
-                             Utils.Utils.RecordStepForOutStock("销售订单已经全部导入不需要同步!", true);
+                             wl_outstock("销售订单已经全部导入不需要同步!", true);
                              return;
                          }
                          foreach (var item in needimport)
                          {
                              if (k3cloud.SyncSaleOrderBill(item) != KingdeeApi.SyncResult.AllSuccess)
                              {
-                                 Utils.Utils.RecordStepForOutStock(item.Model.FBillNo + "同步单据失败！", true);
+                                 wl_outstock(item.Model.FBillNo + "同步单据失败！", true);
                              }
                              else
                              {
-                                 Utils.Utils.RecordStepForOutStock(item.Model.FBillNo + "同步单据成功！");
+                                 wl_outstock(item.Model.FBillNo + "同步单据成功！");
                              }
                          }
 
@@ -351,7 +353,7 @@ namespace Robam_Sync
                     RobamApi.RecordError(exp.Message);
                     Console.WriteLine(exp.Message);
 
-                    Utils.Utils.RecordStepForOutStock("Exception:" + exp.Message, true);
+                    wl_outstock("Exception:" + exp.Message, true);
                 }
                 finally
                 {
@@ -849,26 +851,26 @@ namespace Robam_Sync
                         i => i.ServerType == RobamApi.ServerType.Robam_Crm && i.BusinessType == RobamApi.BusinessType.Robam_PJ,
                        (acct) =>
                        {
-                           Utils.Utils.RecordStepForPartsOutstock("开始进行导入");
+                           wl_outstock("开始进行导入");
                            DateTime _StartDate, _EndDate;
                            if (!DateTime.TryParse(startDate, out _StartDate))
                            {
-                               Utils.Utils.RecordStepForPartsOutstock("传入的开始日期参数不能转换为日期！", true);
+                               wl_outstock("传入的开始日期参数不能转换为日期！", true);
                                return;
                            }
                            if (!DateTime.TryParse(endDate, out _EndDate))
                            {
-                               Utils.Utils.RecordStepForPartsOutstock("传入的结束日期参数不能转换为日期", true);
+                               wl_outstock("传入的结束日期参数不能转换为日期", true);
                                return;
                            }
                            if (!(_EndDate - _StartDate > TimeSpan.FromHours(6)))
                            {
-                               Utils.Utils.RecordStepForPartsOutstock("日期间隔时间太短！", true);
+                               wl_outstock("日期间隔时间太短！", true);
                                return;
                            }
                            if (_EndDate - _StartDate > TimeSpan.FromDays(2))
                            {
-                               Utils.Utils.RecordStepForPartsOutstock("日期间隔时间不能超过2天，否则将导致导入时间过长!", true);
+                               wl_outstock("日期间隔时间不能超过2天，否则将导致导入时间过长!", true);
                                return;
                            }
 
@@ -877,41 +879,41 @@ namespace Robam_Sync
                            //var billtypelist = ins.GetInBillType();
                            //确定不导入的单据类型
                            var unsyncbilltype = k3cloud.UnsyncBillType("PLYE_PartsOutstock");
-                           Utils.Utils.RecordStepForPartsOutstock("开始获取单据列表，对比未同步信息");
+                           wl_outstock("开始获取单据列表，对比未同步信息");
                            if (unsyncbilltype == null)
                            {
-                               Utils.Utils.RecordStepForPartsOutstock("获取已同步单据类型错误!", true);
+                               wl_outstock("获取已同步单据类型错误!", true);
                                return;
                            }
 
                            var buy_instockbill = ins.GetPartsOutstockBill(_StartDate.ToString("yyyy-MM-dd HH:mm:ss"), _EndDate.ToString("yyyy-MM-dd HH:mm:ss"));
                            if (buy_instockbill == null)
                            {
-                               Utils.Utils.RecordStepForPartsOutstock("老板分销系统获取单据失败", true);
+                               wl_outstock("老板分销系统获取单据失败", true);
                                return;
                            }
                            else
                            {
                                if (buy_instockbill?.crminvexportheaderss == null || buy_instockbill?.crminvexportheaderss.Count == 0)
                                {
-                                   Utils.Utils.RecordStepForPartsOutstock("获取老板系统单据数量为0！", true);
+                                   wl_outstock("获取老板系统单据数量为0！", true);
                                    return;
                                }
                            }
-                           Utils.Utils.RecordStepForPartsOutstock("老板分销系统获取单据共计" + (buy_instockbill?.crminvexportheaderss?.Count.ToString() ?? "0") + "条");
+                           wl_outstock("老板分销系统获取单据共计" + (buy_instockbill?.crminvexportheaderss?.Count.ToString() ?? "0") + "条");
 
                            var k3billlist = k3cloud.GetSyncedBillNoList(_StartDate.ToString("yyyy-MM-dd HH:mm:ss"), _EndDate.ToString("yyyy-MM-dd HH:mm:ss"), "PLYE_PartsOutstock");
 
                            if (k3billlist == null)
                            {
-                               Utils.Utils.RecordStepForPartsOutstock("获取K3单据列表失败", true);
+                               wl_outstock("获取K3单据列表失败", true);
                                return;
                            }
-                           Utils.Utils.RecordStepForPartsOutstock("获取K3单据列表共计" + (k3billlist?.Count.ToString() ?? "0") + "条");
+                           wl_outstock("获取K3单据列表共计" + (k3billlist?.Count.ToString() ?? "0") + "条");
                            //过滤单据类型导入
                            //if (billtypelist == null)
                            //{
-                           //    Utils.Utils.RecordStepForPartsOutstock("获取Robam单据类型失败！", true);
+                           //    wl_outstock("获取Robam单据类型失败！", true);
                            //    return;
                            //}
                            //过滤掉不导入的单据
@@ -919,48 +921,48 @@ namespace Robam_Sync
                                //i => billtypelist.dataobjs/*.Where(i => i.orderSourceType == "调拨单据")*/.Select(i => i.orderTypeCode).ToList<string>().Contains(i.orderTypeCode)
                                i => !unsyncbilltype.Contains(i.orderTypeCode)
                                ).Select(i => i.orderNo);
-                           Utils.Utils.RecordStepForPartsOutstock("筛选需要同步的信息");
+                           wl_outstock("筛选需要同步的信息");
 
                            var unsynced = billlists.Except(k3billlist);
-                           Utils.Utils.RecordStepForPartsOutstock("未同步单据共计" + (unsynced?.Count().ToString() ?? "0") + "条");
-                           Utils.Utils.RecordStepForPartsOutstock("需要同步的信息共计" + unsynced.Count().ToString() + "条");
+                           wl_outstock("未同步单据共计" + (unsynced?.Count().ToString() ?? "0") + "条");
+                           wl_outstock("需要同步的信息共计" + unsynced.Count().ToString() + "条");
                            int _index = 0;
                            if (unsynced.Count() > 0)
                            {
                                foreach (var bill in unsynced)
                                {
                                    _index++;
-                                   Utils.Utils.RecordStepForPartsOutstock("第" + _index.ToString() + "条信息，\n");
+                                   wl_outstock("第" + _index.ToString() + "条信息，\n");
                                    var exOrderHeadersId = buy_instockbill.crminvexportheaderss.Where(i => i.orderNo == bill).FirstOrDefault().exOrderHeadersId.ToString();
-                                   Utils.Utils.RecordStepForPartsOutstock("第" + _index.ToString() + "条信息，获取单据详情\n");
+                                   wl_outstock("第" + _index.ToString() + "条信息，获取单据详情\n");
                                    var detailbill = ins.GetOutstockbillDetail(exOrderHeadersId);
                                    //分解基础资料
                                    if (detailbill != null)
                                    {
-                                       Utils.Utils.RecordStepForPartsOutstock("第" + _index.ToString() + "条信息，同步单据基础资料\n");
+                                       wl_outstock("第" + _index.ToString() + "条信息，同步单据基础资料\n");
                                        if (Utils.Utils.SyncAllItemsFromInStockBill(detailbill, k3cloud, ins, "SAL_OUTSTOCK"))
                                        {
-                                           Utils.Utils.RecordStepForPartsOutstock("第" + _index.ToString() + "条信息，同步单据基础资料\n");
+                                           wl_outstock("第" + _index.ToString() + "条信息，同步单据基础资料\n");
                                            //同步单据
                                            if (k3cloud.SyncPartsOutstockBill(detailbill, ins, acct.FCompany) == KingdeeApi.SyncResult.AllSuccess)
                                            {
-                                               Utils.Utils.RecordStepForPartsOutstock("第" + _index.ToString() + "条信息，同步单据完成\n");
+                                               wl_outstock("第" + _index.ToString() + "条信息，同步单据完成\n");
                                            }
                                        }
                                        else
                                        {
-                                           Utils.Utils.RecordStepForPartsOutstock("同步信息时发生错误！\n", true);
+                                           wl_outstock("同步信息时发生错误！\n", true);
                                        }
                                    }
                                    else
                                    {
-                                       Utils.Utils.RecordStepForPartsOutstock("第" + _index.ToString() + "条信息，获取单据详情失败!\n", true);
+                                       wl_outstock("第" + _index.ToString() + "条信息，获取单据详情失败!\n", true);
                                    }
                                }
                            }
                            else
                            {
-                               Utils.Utils.RecordStepForPartsOutstock("选择期间没有未同步单据");
+                               wl_outstock("选择期间没有未同步单据");
                            }
                        });
                     return Ok(new { Message = JsonConvert.SerializeObject(Sqlite_Helper_Static.read<Sqlite_Models_PartsOutstock_importStep>()) });
@@ -971,7 +973,7 @@ namespace Robam_Sync
                     JObject jobj = new JObject();
                     jobj["Error"] = exp.Message;
                     jobj["Message"] = JsonConvert.SerializeObject(Sqlite_Helper_Static.read<Sqlite_Models_PartsOutstock_importStep>());
-                    Utils.Utils.RecordStepForPartsOutstock("Exception:" + exp.Message, true);
+                    wl_outstock("Exception:" + exp.Message, true);
                     return BadRequest(new { Message = jobj.ToString() });
                 }
                 finally
@@ -997,6 +999,150 @@ namespace Robam_Sync
             if (!sg_sync_syncpartsinstockbill_Running)
             {
                 sg_sync_syncpartsinstockbill_Running = true;
+                try
+                {
+                    Sqlite_Helper_Static.droptable<Sqlite_Models_PartsInstock_importStep>();
+
+                    //IActionResult result = new BadRequestObjectResult(new { }) ;
+
+                    KingdeeApi.MatchAccountDo(
+                        i => i.ServerType == RobamApi.ServerType.Robam_Crm && i.BusinessType == RobamApi.BusinessType.Robam_PJ,
+                       (acct) =>
+                       {
+                           wl_instock("开始进行导入");
+                           DateTime _StartDate, _EndDate;
+                           if (!DateTime.TryParse(startDate, out _StartDate))
+                           {
+                               wl_instock("传入的开始日期参数不能转换为日期！", true);
+                               return;
+                           }
+                           if (!DateTime.TryParse(endDate, out _EndDate))
+                           {
+                               wl_instock("传入的结束日期参数不能转换为日期", true);
+                               return;
+                           }
+                           if (!(_EndDate - _StartDate > TimeSpan.FromHours(6)))
+                           {
+                               wl_instock("日期间隔时间太短！", true);
+                               return;
+                           }
+                           if (_EndDate - _StartDate > TimeSpan.FromDays(2))
+                           {
+                               Utils.Utils.RecordStepForPartsOutstock("日期间隔时间不能超过2天，否则将导致导入时间过长!", true);
+                               return;
+                           }
+                           var k3cloud = new KingdeeApi();
+                           var ins = new RobamApi.Robam_CRM(acct);
+                           //var billtypelist = ins.GetInBillType();
+                           //确定不导入的单据类型
+                           var unsyncbilltype = k3cloud.UnsyncBillType("PLYE_PartsInstock");
+                           if (unsyncbilltype == null)
+                           {
+                               Utils.Utils.RecordStepForPartsOutstock("获取已同步单据类型错误!", true);
+                               return;
+                           }
+                           wl_instock("开始获取单据列表，对比未同步信息");
+                           var instockbill = ins.GetPartsInstockBill(_StartDate.ToString("yyyy-MM-dd HH:mm:ss"), _EndDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                           if (instockbill == null)
+                           {
+                               wl_instock("老板分销系统获取单据失败", true);
+                               return;
+                           }
+                           wl_instock("老板分销系统获取单据共计" + (instockbill?.crminvexportheaderss?.Count.ToString() ?? "0") + "条");
+                           //获取 配件入库订单单号
+                           var k3billlist = k3cloud.GetSyncedBillNoList(_StartDate.ToString("yyyy-MM-dd HH:mm:ss"), _EndDate.ToString("yyyy-MM-dd HH:mm:ss"), "STK_InStock");
+                           if (k3billlist == null)
+                           {
+                               wl_instock("获取K3单据列表失败", true);
+                               return;
+                           }
+                           wl_instock("获取K3单据列表共计" + (k3billlist?.Count.ToString() ?? "0") + "条");
+                           //过滤单据类型导入
+                           //if (billtypelist == null)
+                           //{
+                           //    wl_instock("获取Robam单据类型失败！", true);
+                           //    return;
+                           //}
+                           //过滤掉不导入的单据类型
+                           var billlists = instockbill.crminvexportheaderss.Where(
+                               //i => billtypelist.dataobjs/*.Where(i => i.orderSourceType == "调拨单据")*/.Select(i => i.orderTypeCode).ToList<string>().Contains(i.orderTypeCode)
+                               i => !unsyncbilltype.Contains(i.orderTypeCode)
+                               ).Select(i => i.orderNo);
+                           wl_instock("筛选需要同步的信息");
+
+                           var unsynced = billlists.Except(k3billlist);
+                           wl_instock("未同步单据共计" + (unsynced?.Count().ToString() ?? "0") + "条");
+                           wl_instock("需要同步的信息共计" + unsynced.Count().ToString() + "条");
+                           int _index = 0;
+                           if (unsynced.Count() > 0)
+                           {
+                               foreach (var bill in unsynced)
+                               {
+                                   _index++;
+                                   wl_instock("第" + _index.ToString() + "条信息，\n");
+                                   var exOrderHeadersId = instockbill.crminvexportheaderss.Where(i => i.orderNo == bill).FirstOrDefault().exOrderHeadersId.ToString();
+                                   wl_instock("第" + _index.ToString() + "条信息，获取单据详情\n");
+                                   var detailbill = ins.GetOutstockbillDetail(exOrderHeadersId);
+                                   //分解基础资料
+                                   if (detailbill != null)
+                                   {
+                                       wl_instock("第" + _index.ToString() + "条信息，同步单据基础资料\n");
+                                       if (Utils.Utils.SyncAllItemsFromInStockBill(detailbill, k3cloud, ins, "STK_InStock"))
+                                       {
+                                           wl_instock("第" + _index.ToString() + "条信息，同步单据基础资料\n");
+                                           //同步单据
+                                           if (k3cloud.SyncPartsInstockBill(detailbill, ins, acct.FCompany) == KingdeeApi.SyncResult.AllSuccess)
+                                           {
+                                               wl_instock("第" + _index.ToString() + "条信息，同步单据完成\n");
+                                           }
+                                       }
+                                       else
+                                       {
+                                           wl_instock("同步信息时发生错误！\n", true);
+                                       }
+                                   }
+                                   else
+                                   {
+                                       wl_instock("第" + _index.ToString() + "条信息，获取单据详情失败!\n", true);
+                                   }
+                               }
+                           }
+                           else
+                           {
+                               wl_instock("选择期间没有未同步单据");
+                           }
+                       });
+                    var s = JsonConvert.SerializeObject(Sqlite_Helper_Static.read<Sqlite_Models_PartsInstock_importStep>());
+                    return Ok(new { Message = s });
+
+
+                }
+                catch (Exception exp)
+                {
+                    RobamApi.RecordError(exp.Message);
+                    JObject jobj = new JObject();
+                    jobj["Error"] = exp.Message;
+                    jobj["Message"] = JsonConvert.SerializeObject(Sqlite_Helper_Static.read<Sqlite_Models_PartsInstock_importStep>());
+                    wl_instock("Exception:" + exp.Message, true);
+                    return BadRequest(new { Message = jobj.ToString() });
+                }
+                finally
+                {
+                    sg_sync_syncpartsinstockbill_Running = false;
+                }
+            }
+            else
+            {
+                return BadRequest(new { Message = JsonConvert.SerializeObject(new Sqlite_Models_PartsInstock_importStep() { FID = 1, IsError = true, Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), Message = "上次同步未完成!" }) });
+            }
+        }
+        [HttpPost]
+        [Route("api/syncpartsretuenbackbill")]
+        public IActionResult sync_PartsreturnbackList([FromForm] string startDate, string endDate)
+        {
+            if (!sg_sync_syncreturnback_Running)
+            {
+                sg_sync_syncreturnback_Running = true;
                 try
                 {
                     Sqlite_Helper_Static.droptable<Sqlite_Models_PartsInstock_importStep>();
@@ -1040,7 +1186,7 @@ namespace Robam_Sync
                                return;
                            }
                            Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("开始获取单据列表，对比未同步信息");
-                           var instockbill = ins.GetPartsInstockBill(_StartDate.ToString("yyyy-MM-dd HH:mm:ss"), _EndDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                           var instockbill = ins.GetPartsReturnBack(_StartDate.ToString("yyyy-MM-dd HH:mm:ss"), _EndDate.ToString("yyyy-MM-dd HH:mm:ss"));
                            if (instockbill == null)
                            {
                                Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("老板分销系统获取单据失败", true);
@@ -1089,7 +1235,7 @@ namespace Robam_Sync
                                        {
                                            Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("第" + _index.ToString() + "条信息，同步单据基础资料\n");
                                            //同步单据
-                                           if (k3cloud.SyncPartsInstockBill(detailbill, ins, acct.FCompany) == KingdeeApi.SyncResult.AllSuccess)
+                                           if (k3cloud.SyncPartsRerurnBack(detailbill, ins, acct.FCompany) == KingdeeApi.SyncResult.AllSuccess)
                                            {
                                                Utils.Utils.RecordStepNew<Sqlite_Models_Instock>("第" + _index.ToString() + "条信息，同步单据完成\n");
                                            }
@@ -1126,13 +1272,11 @@ namespace Robam_Sync
                 }
                 finally
                 {
-                    sg_sync_syncpartsinstockbill_Running = false;
+                    sg_sync_syncreturnback_Running = false;
                 }
             }
-            else
-            {
-                return BadRequest(new { Message = JsonConvert.SerializeObject(new Sqlite_Models_PartsInstock_importStep() { FID = 1, IsError = true, Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), Message = "上次同步未完成!" }) });
-            }
+            
+            return Ok(new { Message = "success"});
         }
         /// <summary>
         /// 同步配件价格
@@ -1581,12 +1725,13 @@ namespace Robam_Sync
             }
             if (paras.FBillTypes.Contains("pjrkd"))
             {
-                //判断产品入库
+                //判断配件入库
                 sync_PartsInstockList(paras.FStartDate, paras.FEndDate);
+                //sync_PartsreturnbackList(paras.FStartDate, paras.FEndDate);
             }
             if (paras.FBillTypes.Contains("cprkd"))
             {
-                //判断配件入库
+                //判断产品入库
                 sync_StockList(paras.FStartDate,paras.FEndDate);
             }
             return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Instock>().Select(i => i.Format()).ToList() };
@@ -1642,6 +1787,19 @@ namespace Robam_Sync
         public Sqlite_Models_Result_TableMessage syncqtxxtb([FromBody] Models.Paras paras)
         {
             Sqlite_Helper_Static.deleteall<Sqlite_Models_QTXXTB>();
+            if(paras == null)
+            {
+                return new Sqlite_Models_Result_TableMessage() { rowData = new List<Result_TableMessage_RowData> { new Result_TableMessage_RowData() { index = 1 ,description = "参数传递错误！接收的参数为null",isError = true} } };
+            }
+            if (paras.FBillTypes.Contains("pjjg"))
+            {
+                syncPartsPrices();
+            }
+            if (paras.FBillTypes.Contains("cpjg"))
+            {
+
+            }
+
             return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_QTXXTB>().Select(i => i.Format()).ToList() };
         }
         [HttpPost]
@@ -1649,6 +1807,22 @@ namespace Robam_Sync
         public Sqlite_Models_Result_TableMessage synczczldr([FromBody] Models.Paras paras)
         {
             Sqlite_Helper_Static.deleteall<Sqlite_Models_JCZLTB>();
+            if (paras == null)
+            {
+                return new Sqlite_Models_Result_TableMessage() { rowData = new List<Result_TableMessage_RowData> { new Result_TableMessage_RowData() { index = 1, description = "参数传递错误！接收的参数为null", isError = true } } };
+            }
+            if (paras.FBillTypes.Contains("cp"))
+            {
+                SyncAllItem();
+            }
+            if (paras.FBillTypes.Contains("dgy"))
+            {
+
+            }
+            if (paras.FBillTypes.Contains("md"))
+            {
+                SyncAllShops();
+            }
             return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_JCZLTB>().Select(i => i.Format()).ToList() };
         }
         [HttpPost]

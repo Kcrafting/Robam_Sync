@@ -4109,6 +4109,187 @@ namespace Utils
             }
             return SyncResult.ErrorDuringSync;
         }
+        //配件红字单据
+        /// <summary>
+        /// 老板配件退回同步到系统的销售退货单
+        /// </summary>
+        /// <param name="billdetail"></param>
+        /// <param name="robam"></param>
+        /// <param name="forgid"></param>
+        /// <returns></returns>
+        public SyncResult SyncPartsRerurnBack(CRM_OutStockDetail billdetail, Robam_CRM robam, string forgid)
+        {
+            try
+            {
+                //var list = new List<K3Cloud_PurchaseOrder_Model_FRobam_PurchaseOrderEntity>();
+                //foreach (var item in billdetail.crminvexportheaders.crmInvExOrderLinesVs)
+                //{
+                //    var sublist = new List<K3Cloud_PurchaseOrder_Model_FRobam_PurchaseOrderEntity_FRobam_PurchaseOrderCodeEntity>();
+                //    var qrcodes = robam.GetBillQrcode(billdetail.crminvexportheaders.orderNo);
+                //    foreach (var code in qrcodes.barcodeList)
+                //    {
+                //        if (code.materialCode == item.materialCode)
+                //        {
+                //            sublist.Add(new K3Cloud_PurchaseOrder_Model_FRobam_PurchaseOrderEntity_FRobam_PurchaseOrderCodeEntity() { FQrCodeText = code.barcode });
+                //        }
+                //    }
+
+                //    list.Add(new K3Cloud_PurchaseOrder_Model_FRobam_PurchaseOrderEntity()
+                //    {
+                //        FMaterialID = { FNUMBER = item.materialCode },
+                //        FUnitID = { FNUMBER = item.unitCode },
+                //        FQty_Fact = Convert.ToDecimal(item.actualQuantity),
+                //        FQty = Convert.ToDecimal(item.quantity),
+                //        FQty_Recive = Convert.ToDecimal(item.customerRealQty),
+                //        FSourceBillNo = item.sourceOrderNo,
+                //        FInventory = { FNUMBER = billdetail.crminvexportheaders.inventoryCode },
+                //        FRobam_PurchaseOrderCodeEntity = sublist,
+                //        FStockStatusId = { FNUMBER = item.deliveryGoodsStatus },
+
+                //    });
+                //}
+                //var bill = new K3Cloud_PurchaseOrder()
+                //{
+                //    Model =
+                //    {
+                //        FBillNo = billdetail.crminvexportheaders.orderNo,
+                //        FCompany = {FNUMBER = billdetail.crminvexportheaders.orgId.ToString()},
+                //        FBillTypeID = {FNUMBER = billdetail.crminvexportheaders.orderTypeCode },
+                //        FDate = billdetail.crminvexportheaders.orderDate,
+                //        FBookDate = billdetail.crminvexportheaders.customerDate,
+                //        FDisBillNo = billdetail.crminvexportheaders.sourceOrderNo,
+                //        FOrgBillTypeID = billdetail.crminvexportheaders.orderTypeName,
+                //        FContact = billdetail.crminvexportheaders.contactName,
+                //        FContactPhone = billdetail.crminvexportheaders.contactTel,
+                //        FContactAddress = billdetail.crminvexportheaders.inceptAddress,
+                //        FSendUnitType = billdetail.crminvexportheaders.inventoryCode != null ? "PLYE_Company" : "",
+                //        FSendUnit = {FNumber = billdetail.crminvexportheaders.deliveryCustomerCode??"" },
+                //        FSendInventory = {FNUMBER = billdetail.crminvexportheaders.inventoryCode ?? "" },
+                //        FReciveUnitType = (billdetail.crminvexportheaders.customerCode != null ? "PLYE_Company" : ""),
+                //        FReciveUnit = {FNumber = billdetail.crminvexportheaders.customerCode ?? "" },
+                //        FCustomer = billdetail.crminvexportheaders.contactName,
+                //        FRobam_PurchaseOrderEntity = list,
+                //        FOrgBillNo = billdetail.crminvexportheaders.orderNo,
+                //        FOrgID = { FNumber = forgid },
+                //        FReciveCompany = {FNumber = billdetail.crminvexportheaders.customerCode ?? "" },
+                //        FSendCompany = {FNumber = billdetail.crminvexportheaders.deliveryCustomerCode ?? "" },
+                //    }
+                //};
+                //var ret = ZJF_WEBAPI.sendRepuest(K3Cloud_AddressType.save, new object[] { "PLYE_PartsInstock", JsonConvert.SerializeObject(bill) });
+                SyncPartsInstockOrderBill(billdetail, robam, forgid);
+                var list = new List<K3Cloud_InstockBill_Model_FInStockEntry>();
+                foreach (var item in billdetail.crminvexportheaders.crmInvExOrderLinesVs)
+                {
+                    var sublist = new List<K3Cloud_InstockBill_Model_FInStockEntry_FRobam_SubEntity>();
+                    var qrcodes = robam.GetBillQrcode(billdetail.crminvexportheaders.orderNo);
+                    foreach (var code in qrcodes.barcodeList)
+                    {
+                        if (code.materialCode == item.materialCode)
+                        {
+                            sublist.Add(new K3Cloud_InstockBill_Model_FInStockEntry_FRobam_SubEntity() { FQrCodeText = code.barcode });
+                        }
+                    }
+
+                    list.Add(new K3Cloud_InstockBill_Model_FInStockEntry()
+                    {
+                        FMaterialId = { FNumber = item.materialCode },
+                        FUnitID = { FNumber = item.unitCode },
+                        FRealQty = 0 - Convert.ToDecimal(item.actualQuantity),
+                        FPriceBaseQty = Convert.ToDecimal(item.actualQuantity),
+                        FRemainInStockQty = Convert.ToDecimal(item.actualQuantity),
+                        FRemainInStockBaseQty = Convert.ToDecimal(item.actualQuantity),
+                        FAPNotJoinQty = Convert.ToDecimal(item.actualQuantity),
+                        FPriceUnitID = { FNumber = item.unitCode },
+                        FRemainInStockUnitId = { FNumber = item.unitCode },
+                        FStockId = { FNumber = billdetail.crminvexportheaders.inventoryCode },
+                        FStockStatusId = { FNumber = item.deliveryGoodsStatus },
+                        FRobam_SubEntity = sublist,
+                        //FQty_Recive = Convert.ToDecimal(item.customerRealQty),
+                        //FSourceBillNo = item.sourceOrderNo,
+                        //FInventory = { FNUMBER = billdetail.crminvexportheaders.inventoryCode },
+                        //FRobam_PurchaseOrderCodeEntity = sublist,
+                        //FStockStatusId = { FNUMBER = item.deliveryGoodsStatus },
+
+                    });
+                }
+                //var bill = new K3Cloud_PurchaseOrder()
+                //{
+                //    Model =
+                //    {
+                //        FBillNo = billdetail.crminvexportheaders.orderNo,
+                //        FCompany = {FNUMBER = billdetail.crminvexportheaders.orgId.ToString()},
+                //        FBillTypeID = {FNUMBER = billdetail.crminvexportheaders.orderTypeCode },
+                //        FDate = billdetail.crminvexportheaders.orderDate,
+                //        FBookDate = billdetail.crminvexportheaders.customerDate,
+                //        FDisBillNo = billdetail.crminvexportheaders.sourceOrderNo,
+                //        FOrgBillTypeID = billdetail.crminvexportheaders.orderTypeName,
+                //        FContact = billdetail.crminvexportheaders.contactName,
+                //        FContactPhone = billdetail.crminvexportheaders.contactTel,
+                //        FContactAddress = billdetail.crminvexportheaders.inceptAddress,
+                //        FSendUnitType = billdetail.crminvexportheaders.inventoryCode != null ? "PLYE_Company" : "",
+                //        FSendUnit = {FNumber = billdetail.crminvexportheaders.deliveryCustomerCode??"" },
+                //        FSendInventory = {FNUMBER = billdetail.crminvexportheaders.inventoryCode ?? "" },
+                //        FReciveUnitType = (billdetail.crminvexportheaders.customerCode != null ? "PLYE_Company" : ""),
+                //        FReciveUnit = {FNumber = billdetail.crminvexportheaders.customerCode ?? "" },
+                //        FCustomer = billdetail.crminvexportheaders.contactName,
+                //        FRobam_PurchaseOrderEntity = list,
+                //        FOrgBillNo = billdetail.crminvexportheaders.orderNo,
+                //        FOrgID = { FNumber = forgid },
+                //        FReciveCompany = {FNumber = billdetail.crminvexportheaders.customerCode ?? "" },
+                //        FSendCompany = {FNumber = billdetail.crminvexportheaders.deliveryCustomerCode ?? "" },
+                //    }
+                //};
+                var bill = new K3Cloud_InstockBill()
+                {
+                    Model =
+                    {
+                        FBillNo = billdetail.crminvexportheaders.orderNo,
+                        FRobamBillNo = billdetail.crminvexportheaders.orderNo,
+                        //FCompany = {FNUMBER = billdetail.crminvexportheaders.orgId.ToString()},
+                        FBillTypeID = {FNumber = ("STK_InStock").ToUpper() + "_" +  billdetail.crminvexportheaders.orderTypeName },
+                        FRobamDate = billdetail.crminvexportheaders.orderDate,
+                        FSupplierId = { FNumber = billdetail.crminvexportheaders.customerCode},
+                        FInStockEntry = list,
+                        FRobamCompany = {FNumber = forgid }
+                        //FBookDate = billdetail.crminvexportheaders.customerDate,
+                        //FDisBillNo = billdetail.crminvexportheaders.sourceOrderNo,
+                        //FOrgBillTypeID = billdetail.crminvexportheaders.orderTypeName,
+                        //FContact = billdetail.crminvexportheaders.contactName,
+                        //FContactPhone = billdetail.crminvexportheaders.contactTel,
+                        //FContactAddress = billdetail.crminvexportheaders.inceptAddress,
+                        //FSendUnitType = billdetail.crminvexportheaders.inventoryCode != null ? "PLYE_Company" : "",
+                        //FSendUnit = {FNumber = billdetail.crminvexportheaders.deliveryCustomerCode??"" },
+                        //FSendInventory = {FNUMBER = billdetail.crminvexportheaders.inventoryCode ?? "" },
+                        //FReciveUnitType = (billdetail.crminvexportheaders.customerCode != null ? "PLYE_Company" : ""),
+                        //FReciveUnit = {FNumber = billdetail.crminvexportheaders.customerCode ?? "" },
+                        //FCustomer = billdetail.crminvexportheaders.contactName,
+                        //FRobam_PurchaseOrderEntity = list,
+                        //FOrgBillNo = billdetail.crminvexportheaders.orderNo,
+                        //FOrgID = { FNumber = forgid },
+                        //FReciveCompany = {FNumber = billdetail.crminvexportheaders.customerCode ?? "" },
+                        //FSendCompany = {FNumber = billdetail.crminvexportheaders.deliveryCustomerCode ?? "" },
+                    }
+                };
+                string paras = JsonConvert.SerializeObject(bill);
+                var ret = ZJF_WEBAPI.sendRepuest(K3Cloud_AddressType.save, new object[] { "STK_InStock", paras });
+
+                var jobj = JObject.Parse(ret);
+                if (jobj.SelectToken("Result.['ResponseStatus'].['IsSuccess']").Value<bool>())
+                {
+                    return SyncResult.AllSuccess;
+                }
+                else
+                {
+                    return SyncResult.ErrorDuringSync;
+                }
+            }
+            catch (Exception exp)
+            {
+                m_ErrorMessage = exp.Message;
+                Logger.log(exp.Message);
+            }
+            return SyncResult.ErrorDuringSync;
+        }
         //配件入库订单
         public SyncResult SyncPartsInstockOrderBill(CRM_OutStockDetail billdetail, Robam_CRM robam, string forgid)
         {
