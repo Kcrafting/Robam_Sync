@@ -1562,7 +1562,16 @@ namespace Robam_Sync
                         return BadRequest(new { Message = "获取账户失败" });
                     }
                     var crm = new RobamApi.Robam_CRM(acc);
-                    var ret = crm.GetItemListFromText();
+                    var ret = crm.GetItemList();
+                    if(ret == null)
+                    {
+                        wl_jczldr("获取基础资料失败!",true);
+                        return Ok(new { Message = "failed"});
+                    }
+                    wl_jczldr("获取基础资料成功，共计" + ret.materials.Count + "条");
+
+
+
                     k3cloud.CreateItem(ret);
                     return Ok(new
                     {
@@ -1605,12 +1614,14 @@ namespace Robam_Sync
 
                     if (acc == null)
                     {
-                        Utils.Utils.RecordStep<Sqlite_Models_MaterialSync>("获取账户失败！");
+                        //Utils.Utils.RecordStep<Sqlite_Models_MaterialSync>("获取账户失败！");
+                        wl_jczldr("获取账户失败！", true);
                         return BadRequest(new { Message = "获取账户失败" });
                     }
                     var crm = new RobamApi.Robam_CRM(acc);
                     //获取配件
-                    var ret = crm.GetItemPartList();
+                    //var ret = crm.GetItemPartList();
+                    var ret = crm.GetItemListFromText();
                     k3cloud.CreateItem(ret);
                     return Ok(new
                     {
@@ -1661,15 +1672,22 @@ namespace Robam_Sync
                 try
                 {
                     KingdeeApi k3cloud = new KingdeeApi();
-                    var acc = Utils.KingdeeApi.GetRobamAccountListForList()?.Where(i => i.ServerType == RobamApi.ServerType.Robam_Crm && i.BusinessType == RobamApi.BusinessType.Robam_PJ)?.FirstOrDefault();
+                    var acc = Utils.KingdeeApi.GetRobamAccountListForList()?.Where(i => i.ServerType == RobamApi.ServerType.Robam_Distribution && i.BusinessType == RobamApi.BusinessType.Robam_CP)?.FirstOrDefault();
                     
                     if (acc == null)
                     {
                         Utils.Utils.RecordStep<Sqlite_Models_MaterialSync>("获取账户失败！");
                         return BadRequest(new { Message = "获取账户失败" });
                     }
-                    var crm = new RobamApi.Robam_CRM(acc);
-                    //var shops = crm.GetShops();
+                    var dis = new RobamApi.Robam_Distribution(acc);
+                    var shops = dis.GetShops();
+                    foreach(var item in shops.response.data.datas)
+                    {
+                        if(k3cloud.CreateShop(item.organization, item.organization_name, "", "", "", "", "") != KingdeeApi.CreateResult.AllSuccess)
+                        {
+                            wl_jczldr("门店" + item.organization + " " + item.organization_name + "创建失败!",true);
+                        }
+                    }
                     //同步地区
                     //同步二级渠道
                 }
@@ -1691,8 +1709,32 @@ namespace Robam_Sync
             }
             return Ok(new { });
         }
+        [HttpGet]
+        [Route("api/syncallitemparts")]
+        public IActionResult SyncAllSalers()
+        {
+            KingdeeApi k3cloud = new KingdeeApi();
+            var acc = Utils.KingdeeApi.GetRobamAccountListForList()?.Where(i => i.ServerType == RobamApi.ServerType.Robam_Distribution && i.BusinessType == RobamApi.BusinessType.Robam_CP)?.FirstOrDefault();
 
-        [HttpPost]
+            if (acc == null)
+            {
+                Utils.Utils.RecordStep<Sqlite_Models_MaterialSync>("获取账户失败！");
+                return BadRequest(new { Message = "获取账户失败" });
+            }
+            var dis = new RobamApi.Robam_Distribution(acc);
+            var salers = dis.GetSalers();
+            foreach(var item in salers.response.data.datas)
+            {
+                if(k3cloud.CreateSalesman(item.employee_no, item.employee_name,  "001") == KingdeeApi.CreateResult.AllSuccess)
+                {
+
+                }
+            }
+            
+            return Ok(new { });
+        }
+
+       [HttpPost]
         [Route("api/syncinstock")]
         public Sqlite_Models_Result_TableMessage syncinstock([FromBody] Models.Paras paras)
         {
@@ -1817,11 +1859,15 @@ namespace Robam_Sync
             }
             if (paras.FBillTypes.Contains("dgy"))
             {
-
+                SyncAllSalers();
             }
             if (paras.FBillTypes.Contains("md"))
             {
                 SyncAllShops();
+            }
+            if (paras.FBillTypes.Contains("pj"))
+            {
+                SyncAllItemParts();
             }
             return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_JCZLTB>().Select(i => i.Format()).ToList() };
         }

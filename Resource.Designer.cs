@@ -103,5 +103,30 @@ namespace Robam_Sync {
                 return ResourceManager.GetString("crypto_js", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   查找类似 {
+        ///    &quot;materials&quot;: [
+        ///        {
+        ///            &quot;materialId&quot;: 1121321,
+        ///            &quot;materialCode&quot;: &quot;010-001F&quot;,
+        ///            &quot;materialDesc&quot;: &quot;烟道防回烟阀（北京专用）&quot;,
+        ///            &quot;materialType&quot;: &quot;3&quot;,
+        ///            &quot;materialTypeName&quot;: &quot;配件&quot;,
+        ///            &quot;unitCode&quot;: &quot;PCS&quot;,
+        ///            &quot;beginDate&quot;: &quot;2008-09-23 13:53:25&quot;,
+        ///            &quot;lengthUnitCode&quot;: &quot;M&quot;,
+        ///            &quot;length&quot;: 0,
+        ///            &quot;width&quot;: 0,
+        ///            &quot;height&quot;: 0,
+        ///            &quot;volumeUnit&quot;: &quot;M3&quot;,
+        ///            &quot;volume&quot;: 0,
+        ///            &quot;qualityUnit&quot;: &quot;KG [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        /// </summary>
+        internal static string Materials {
+            get {
+                return ResourceManager.GetString("Materials", resourceCulture);
+            }
+        }
     }
 }

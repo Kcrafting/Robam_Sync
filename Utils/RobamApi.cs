@@ -20,6 +20,7 @@ using static Microsoft.ClearScript.V8.V8CpuProfile;
 using System.IO;
 using System.Collections;
 using System.Globalization;
+using Robam_Sync;
 
 namespace Utils
 {
@@ -235,14 +236,12 @@ namespace Utils
             {
                 var client = new RestClient(
 
-                new HttpClient()
-                {
-                    BaseAddress = new Uri(
+                //new HttpClient() {BaseAddress = new Uri(
                     urls[UrlType.distribution_signin]
-                    ),
-                    Timeout = TimeSpan.FromMinutes(20)
-                });
+                    //),Timeout = TimeSpan.FromMinutes(20),}
+                );
                 var request = new RestRequest();
+                
                 request.Method = Method.Get;
                 //request.AddHeader("Cookie", "JSESSIONID=E8E0FEAA1D29A55379B5A4085E4850FE.s2");
                 RestResponse response = client.Execute(request);
@@ -1270,7 +1269,7 @@ namespace Utils
                         new HttpClient()
                         {
                             BaseAddress = new Uri(
-                        new HttpClient() { BaseAddress = new Uri("http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmvaluationapplication.queryValuationHeader.biz.ext"), Timeout = TimeSpan.FromMinutes(20) }
+                        "http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmvaluationapplication.queryValuationHeader.biz.ext"
                         ),
                             Timeout = TimeSpan.FromMinutes(20)
                         }
@@ -2016,6 +2015,7 @@ namespace Utils
                     {
                         if (!SignIn())
                         {
+                            Robam_Sync.Robam_Sync.wl_jczldr("没能成功登录crm系统!",true);
                             return null;
                         }
                     }
@@ -2023,11 +2023,13 @@ namespace Utils
                     {
                         if (!SignIn())
                         {
+                            Robam_Sync.Robam_Sync.wl_jczldr("没能成功登录crm系统!", true);
                             return null;
                         }
                     }
                     if (!RegistDefaultRole())
                     {
+                        Robam_Sync.Robam_Sync.wl_jczldr("注册角色错误!", true);
                         m_errorString = "注册角色错误!";
                         return null;
                     }
@@ -2063,7 +2065,7 @@ namespace Utils
                         return JObject.Parse(response.Content).ToObject<CRM_ItemDetail>();
                     });
                     int Pagestart = 0;
-                    int PageNumber = 10000;
+                    int PageNumber = 30000;
                     var ci = Act(@"{""paramMap"":{""materialCode"":"""",""materialName"":"""",""prodType"":"""",""isEbsImport"":"""",""productModelCode"":"""",""isMarking"":"""",""isMaintServ"":"""",""isConf"":""N"",""isReturn"":"""",""productTypeLine"":"""",""userId"":""" + m_operatorId + @""",""functionType"":""3"",""costEnabledFlag"":""Y""},""page"":{""begin"":" + Pagestart.ToString() + @",""length"":" + PageNumber.ToString() + @",""isCount"":true},""pageIndex"":" + Pagestart.ToString() + @",""pageSize"":" + PageNumber.ToString() + @",""sortField"":"""",""sortOrder"":""""}");
                     //查看多页
                     int Pages = 0;
@@ -2096,19 +2098,21 @@ namespace Utils
                 }
                 catch(Exception exp)
                 {
+                    Robam_Sync.Robam_Sync.wl_jczldr("导入发生错误:");
                     Logger.log(exp.Message);
                 }
                 return null;
             }
             public CRM_ItemDetail GetItemListFromText()
             {
-                string pathName = @"./result/ret/s.txt";
-                FileStream fs = new FileStream(pathName, FileMode.OpenOrCreate);
-                StreamReader wr = null;
-                wr = new StreamReader(fs);
-                string ret = wr.ReadToEnd();
-                wr.Close();
-                return JObject.Parse(ret).ToObject<CRM_ItemDetail>();
+                //string pathName = @"./result/ret/s.txt";
+                //FileStream fs = new FileStream(pathName, FileMode.OpenOrCreate);
+                //StreamReader wr = null;
+                //wr = new StreamReader(fs);
+                string txt = Resource.Materials;
+                //string ret = wr.ReadToEnd();
+                //wr.Close();
+                return JObject.Parse(txt).ToObject<CRM_ItemDetail>();
             }
             ///同步价格
             public void GetPriceScheme()
@@ -2247,13 +2251,9 @@ namespace Utils
                 try
                 {
                     var client = new RestClient(
-                        new HttpClient()
-                        {
-                            BaseAddress = new Uri(
+                        //new HttpClient(){BaseAddress = new Uri(
                         "http://fx.hzrobam.com/DWGateway/restful/Sys/ILoginService/login"
-                        ),
-                            Timeout = TimeSpan.FromMinutes(20)
-                        }
+                        //),Timeout = TimeSpan.FromMinutes(20)}
                         );
                     //client.Timeout = -1;
                     //var request = new RestRequest(Method.POST);
@@ -2272,7 +2272,7 @@ namespace Utils
                     request.AddHeader("Program-Code", "login");
                     request.AddHeader("Referer", "http://fx.hzrobam.com/");
                     request.AddHeader("UserAgent", "Mozilla /5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.102 Safari/537.36 Edg/104.0.1293.63");
-                    var body = @"{""params"":{""userId"":""" + m_Account.Account + @""",""passwordType"":""hash"",""password"":""" + m_Account.Password + @"""}}";
+                    var body = @"{""params"":{""userId"":""" + m_Account.Account + @""",""passwordType"":""hash"",""password"":""" + m_Account.FPWD + @"""}}";
                     request.AddParameter("application/json", body, ParameterType.RequestBody);
                     RestResponse response = client.Execute(request);
                     var jobj = JObject.Parse(response.Content).ToObject<DIS_Signin>();
@@ -3269,13 +3269,9 @@ namespace Utils
                 {
                     Checklogin();
                     var client = new RestClient(
-                        new HttpClient()
-                        {
-                            BaseAddress = new Uri(
+                        new HttpClient(){BaseAddress = new Uri(
                             "http://fx.hzrobam.com/DWGateway/restful/Base/IOrganizationSiteBasedService/getOrganizationBasedList"
-                            ),
-                            Timeout = TimeSpan.FromMinutes(20)
-                        }
+                            ),Timeout = TimeSpan.FromMinutes(20)}
                         );
                     var request = new RestRequest();
                     request.Method = Method.Post;

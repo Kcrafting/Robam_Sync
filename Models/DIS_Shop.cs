@@ -10,7 +10,7 @@ namespace Models
         public string statusDescription { get; set; }
         public DIS_Shop_response response { get; set; }
         public DIS_Shop_profile profile { get; set; }
-        public int uuid { get; set; }
+        public string uuid { get; set; }
         public string status { get; set; }
 
     }

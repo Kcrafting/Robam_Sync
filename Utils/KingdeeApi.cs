@@ -4,6 +4,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using static ZJF.ZJF_WEBAPI;
 using static Utils.RobamApi;
+using Robam_Sync;
+using System.Diagnostics;
 
 namespace Utils
 {
@@ -203,7 +205,7 @@ namespace Utils
                         FIsSalseByNet = false,
                         SubHeadEntity =
                         {
-                            FBaseUnitId = { FNUMBER = funitnumber},
+                            FBaseUnitId = { FNUMBER = "PCS"},
                             FCategoryID =  {FNUMBER = "CHLB05_SYS" },
                         },
                         SubHeadEntity1 =
@@ -563,7 +565,18 @@ namespace Utils
                     fgroup = "";
                     //return CreateResult.ParameterIsNull;
                 }
-
+                int funitid = 0;
+                if (!(CheckUnitExist(funitnumber,out funitid) == CheckResult.ItemExists))
+                {
+                    if(!(CreateUnit(funitnumber, funitnumber) == CreateResult.AllSuccess)){
+                        Robam_Sync.Robam_Sync.wl_jczldr("创建计量单位失败!",true);
+                    }
+                }
+                int fgroupid = 0;
+                if(!(CheckItemGroupExist(fgroup,out fgroupid) == CheckResult.ItemExists))
+                {
+                    Robam_Sync.Robam_Sync.wl_jczldr("物料分组不存在!", true);
+                }
                 var item = aDefaultItem(fitemnumber,fitemname, fitemmodel??"", funitnumber, fstocknumber, fgroup);
                 string para = JsonConvert.SerializeObject(item);
                 var ret = ZJF_WEBAPI.sendRepuest(K3Cloud_AddressType.save, new object[] { "BD_MATERIAL", para });
@@ -580,20 +593,25 @@ namespace Utils
                         var auditret = ZJF_WEBAPI.sendRepuest(K3Cloud_AddressType.AuditPath, new object[] { "BD_MATERIAL", JsonConvert.SerializeObject(commitpara) });
                         if (JObject.Parse(auditret).SelectToken("Result.['ResponseStatus'].['IsSuccess']") != null && JObject.Parse(auditret).SelectToken("Result.['ResponseStatus'].['IsSuccess']").Value<bool>())
                         {
+                            Robam_Sync.Robam_Sync.wl_jczldr("物料 " + fitemnumber + " " + fitemname + " 创建成功", true);
                             return CreateResult.AllSuccess;
                         }
                         else
                         {
+                            Robam_Sync.Robam_Sync.wl_jczldr("物料 " + fitemnumber + " " + fitemname + " 审核成功", true);
                             return CreateResult.AuditFailed;
                         }
                     }
                     else
                     {
+                        Robam_Sync.Robam_Sync.wl_jczldr("物料 " + fitemnumber + " " + fitemname + " 提交失败", true);
                         return CreateResult.CommitFailed;
                     }
                 }
                 else
                 {
+                    m_ErrorMessage = JObject.Parse(ret).SelectToken("Result.['ResponseStatus'].['Errors'].[0]").Value<string>();
+                    Robam_Sync.Robam_Sync.wl_jczldr("物料 " + fitemnumber + " " + fitemname + " 创建失败" + JObject.Parse(ret).SelectToken("Result.['ResponseStatus'].['Errors'].[0]")?.Value<string>()??"", true);
                     return CreateResult.CreateFailed;
                 }
 
@@ -618,15 +636,19 @@ namespace Utils
                         FilterString = "",
                         FieldKeys = "FNumber"
                     };
+                    Robam_Sync.Robam_Sync.wl_jczldr("当前列表共包含基础资料" + ci.materials?.Count.ToString() + "行");
                     var queryResult = ZJF_WEBAPI.sendRepuest(K3Cloud_AddressType.ExecuteBillQuery, new object[] { JsonConvert.SerializeObject(filter) });
                     var j = JArray.Parse(queryResult);
                     var j2 = j.ToObject<List<List<string>>>();
                     var jrr = j2.Select(i => i.Any() ? i[0] : "").ToList<string>();
                     var vallist = ci.materials.Where(i => !jrr.Contains(i.materialCode)).ToList();
+                    Robam_Sync.Robam_Sync.wl_jczldr("需要同步的基础资料有" + vallist?.Count.ToString() + "条");
+                    Robam_Sync.Robam_Sync.wl_jczldr("需要同步的数据共计" + vallist.Count.ToString() + "条");
                     int c = ci.materials.Count;
-                    for (int i = 0; i < ci.materials.Count; i++)// var item in ci.materials)
+                    for (int i = 0; i < vallist.Count; i++)// var item in ci.materials)
                     {
-                        var item = ci.materials[i];
+                        var item = vallist[i];
+                        Robam_Sync.Robam_Sync.wl_jczldr(i.ToString() + "-现在同步" + item.materialCode??"" + item.materialName??"" + "");
                         int parentId = 0;
                         if (CheckItemGroupExist(item.materialType, out parentId) != CheckResult.ItemExists)
                         {
@@ -670,6 +692,7 @@ namespace Utils
             }
             catch(Exception exp)
             {
+                Robam_Sync.Robam_Sync.wl_jczldr("导入发生错误:" + exp.Message );
                 Logger.log(exp.Message);
             }
             return CreateResult.UnknownError;
