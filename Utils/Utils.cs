@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using static Utils.RobamApi;
 using Robam_Sync;
 using Robam_Sync.Models;
+using Robam_Sync.SignalRWebpack;
 
 namespace Utils
 {
@@ -87,7 +88,6 @@ namespace Utils
                 Logger.log(exp.Message);
             }
         }
-
         public static void RecordStepNew<T>(string message, bool iserror = false) where T : Sqlite_Models_Parent, new()
         {
             try
@@ -841,6 +841,7 @@ namespace Utils
                     engine.Execute(scriptContent);  // 取得脚本里的所有内容，Execute一下，然后，调用engine.Script.func(x,y)执行一下。
 
                     var result = engine.Script.DecryptPassword(password);
+                    return result;
                 }
             }
             catch(Exception exp)
@@ -932,6 +933,29 @@ namespace Utils
                 Logger.log(exp.Message);
             }
             return null;
+        }
+        public static K3Cloud_Bill_Model_XSTHD TranslateCRMToKingdeeCloud(CRM_PartsReturn crmbill)
+        {
+            var k3bill = new K3Cloud_Bill_Model_XSTHD();
+            var entryList = new K3Cloud_Bill_Model_XSTHD_Model_FEntity();
+            foreach (var i in crmbill.crmsoorderheaders)
+            {
+                var ins = new K3Cloud_Bill_Model_XSTHD_Model_FEntity();
+                //ins.FMaterialId = new K3Cloud_Common.K3Cloud_FNumber() { FNumber = i. };
+            }
+            return k3bill;
+        }
+        public static Sqlite_Models_Result_TableMessage StaticMessage(string billType,bool finish = false)
+        {
+            
+            var ret = billType.ToUpper() switch
+            {
+                "INSTOCK" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Instock>().Select(i => i.Format()).ToList() ,syncMessage = new Result_TableMessage_syncMessage() {isFinish = finish } },
+                "OUTSTOCK" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Outstock>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { isFinish = finish } },
+                "QTXXTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_QTXXTB>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { isFinish = finish } },
+                "JCZLTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_JCZLTB>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { isFinish = finish } },
+            };
+            return ret;
         }
     }
 }

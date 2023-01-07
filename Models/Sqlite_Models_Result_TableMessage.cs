@@ -32,6 +32,11 @@ namespace Robam_Sync.Models
         public string description { get; set; }
 
     }
+
+    public class Result_TableMessage_syncMessage
+    {
+        public bool isFinish { get; set; }
+    }
     public class Sqlite_Models_Result_TableMessage
     {
         public List<Result_TableMessage_ColumnType> columnType { get; set; } = new List<Result_TableMessage_ColumnType> {
@@ -75,5 +80,7 @@ namespace Robam_Sync.Models
             },
         };
         public List<Result_TableMessage_RowData> rowData { get; set; }
+        public Result_TableMessage_syncMessage syncMessage { get; set; }
+
     }
 }

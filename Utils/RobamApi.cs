@@ -21,6 +21,7 @@ using System.IO;
 using System.Collections;
 using System.Globalization;
 using Robam_Sync;
+using Robam_Sync.Models;
 
 namespace Utils
 {
@@ -988,7 +989,6 @@ namespace Utils
                 }
                 return null;
             }
-
             public CRM_OutstockList GetRealStockBill(string billno)
             {
                 try
@@ -1185,7 +1185,6 @@ namespace Utils
                 }
                 return ;
             }
-
             public CRM_OutstockList GetPartsInstockBill(string startDate, string endDate)
             {
                 try
@@ -1230,7 +1229,6 @@ namespace Utils
                 }
                 return null;
             }
-
             public CRM_OutstockList GetPartsReturnBack(string startDate, string endDate)
             {
                 try
@@ -1357,7 +1355,6 @@ namespace Utils
                 }
                 return null;
             }
-
             public CRM_OutstockList GetPartsInstockBillForBuy(string startDate, string endDate)
             {
                 try
@@ -1497,7 +1494,6 @@ namespace Utils
                 }
                 return null;
             }
-
             public CRM_OutstockList GetPartsInstockBillForReturn(string startDate, string endDate)
             {
                 try
@@ -1706,7 +1702,6 @@ namespace Utils
                 }
                 return null;
             }
-
             public CRM_OutstockList GetPartsOutstockBill(string startDate, string endDate)
             {
                 try
@@ -2215,7 +2210,6 @@ namespace Utils
                 }
                 return null;
             }
-
             public bool UpdatePartsPriceWithDb(CRM_PartsPrice cr)
             {
                 try
@@ -2236,7 +2230,118 @@ namespace Utils
                 }
                 return false;
             }
-          
+            public CRM_PartsReturn GetPartsReturn()
+            {
+                try
+                {
+                    Checklogin();
+                    if (!m_login)
+                    {
+                        if (!SignIn())
+                        {
+                            return null;
+                        }
+                    }
+                    if (DateTime.Compare(m_loginTime, DateTime.Now) > 30 * 60)
+                    {
+                        if (!SignIn())
+                        {
+                            return null;
+                        }
+                    }
+                    if (!RegistDefaultRole())
+                    {
+                        m_errorString = "注册角色错误!";
+                        return null;
+                    }
+                    //
+                    var client = new RestClient("http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmvaluationapplication.queryValuationHeader.biz.ext");
+                    var request = new RestRequest();
+                    request.Method = Method.Post;
+                    request.AddHeader("Accept", "application/json, text/javascript, */*; q=0.01");
+                    request.AddHeader("Accept-Encoding", "gzip, deflate");
+                    request.AddHeader("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6");
+                    request.AddHeader("Cache-Control", "no-cache");
+                    request.AddHeader("Connection", "keep-alive");
+                    request.AddHeader("Content-Type", "application/json; charset=UTF-8");
+                    request.AddHeader("Cookie", m_Token + "; cod=149.129.826.142.377.10011324.122.136; csd=10011274");
+                    request.AddHeader("Host", "ims.hzrobam.com");
+                    request.AddHeader("Origin", "http://ims.hzrobam.com");
+                    request.AddHeader("Pragma", "no-cache");
+                    request.AddHeader("Referer", "http://ims.hzrobam.com/robamIMS/so/order/ValuationApplicationView.jsp?processDefName=ValuationApplication&statusType=A&functionType=PARTS_RETURN&IntroducedBtn=&addLineBtn2=&removeLineBtn=&addLineBtn=&zbPrint=&btnPrint=&submitBtn=&saveBtn=&printBathBtn2=&deleteBtn=&editBtn=&addBtn=&_t=456580");
+                    request.AddHeader("UserAgent","Mozilla /5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.54");
+                    request.AddHeader("X-Requested-With", "XMLHttpRequest");
+                    var body = @"{""functionType"":""PARTS_RETURN"",""criteria"":{""_entity"":""com.sie.crm.pub.dataset.soEntity.CrmSoOrderHeaderQv1"",""_expr"":[{""orderNum"":"""",""_op"":""=""},{""orderTypeName"":"""",""_op"":""=""},{""customerName"":"""",""_op"":""like""},{""creationDate"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""creationDate"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""salesAreaName"":"""",""_op"":""like""},{""deliveryCustomerName"":"""",""_op"":""like""},{""status"":"""",""_op"":""=""},{""customerTypeName"":"""",""_op"":""like""},{""deliveryCustomerTypeName"":"""",""_op"":""like""},{""superiorCustomerName"":"""",""_op"":""like""},{""goodsTypeName"":"""",""_op"":""like""},{""writeRaIfFlag"":"""",""_op"":""=""},{""exportFlag"":"""",""_op"":""=""},{""exportFinishFlag"":"""",""_op"":""=""},{""functionType"":""PARTS_RETURN"",""_op"":""=""},{""isInTransit"":"""",""_op"":""=""},{""needErpFlag"":"""",""_op"":""=""},{""erpFlag"":"""",""_op"":""=""},{""writeInvIfFlag"":"""",""_op"":""=""},{""acUserId"":""4964588"",""_op"":""=""},{""branchApprovalTime"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""branchApprovalTime"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""},{""lastUpdatedName"":"""",""_op"":""like""},{""orderCommitTime"":"""",""_op"":"">="",""_pattern"":""yyyy-MM-dd""},{""orderCommitTime"":"""",""_op"":""<="",""_pattern"":""yyyy-MM-dd""}],""_orderby"":[{""_sort"":""desc"",""_property"":""orderId""}]},""pageIndex"":0,""pageSize"":20,""sortField"":"""",""sortOrder"":"""",""page"":{""begin"":0,""length"":20,""isCount"":true}}";
+                    request.AddParameter("application/json", body, ParameterType.RequestBody);
+                    RestResponse response = client.Execute(request);
+                    Console.WriteLine(response.Content);
+                    return JObject.Parse(response.Content).ToObject<CRM_PartsReturn>();
+                }
+                catch(Exception exp)
+                {
+
+                }
+                return null;
+            }
+            public CRM_PartsReturnDetail GetPartsReturnDetail(string billno)
+            {
+                try
+                {
+                    Checklogin();
+                    if (!m_login)
+                    {
+                        if (!SignIn())
+                        {
+                            return null;
+                        }
+                    }
+                    if (DateTime.Compare(m_loginTime, DateTime.Now) > 30 * 60)
+                    {
+                        if (!SignIn())
+                        {
+                            return null;
+                        }
+                    }
+                    if (!RegistDefaultRole())
+                    {
+                        m_errorString = "注册角色错误!";
+                        return null;
+                    }
+                    //
+                    var client = new RestClient(
+                        new HttpClient(){BaseAddress = new Uri(
+                        "http://ims.hzrobam.com/robamIMS/so/order/com.sie.crm.so.crmsoorderheaderbiz.getCrmSoOrderHeaderById.biz.ext"
+                         ),Timeout = TimeSpan.FromMinutes(20)}
+                        );
+                    
+                    var request = new RestRequest();
+                    request.Method = Method.Post;
+                    request.AddHeader("Accept", "*/*");
+                    request.AddHeader("Accept-Encoding", "gzip, deflate");
+                    request.AddHeader("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6");
+                    request.AddHeader("Cache-Control", "no-cache");
+                    request.AddHeader("Connection", "keep-alive");
+                    request.AddHeader("Content-Type", "application/json; charset=UTF-8");
+                    request.AddHeader("Cookie", m_Token + "; cod=377.136; csd=10011274");
+                    request.AddHeader("Host", "ims.hzrobam.com");
+                    request.AddHeader("Origin", "http://ims.hzrobam.com");
+                    request.AddHeader("Pragma", "no-cache");
+                    request.AddHeader("Referer", "http://ims.hzrobam.com/robamIMS/so/order/ValuationApplicationDetail.jsp?processDefName=ValuationApplication&businessid=34078302&functionType=PARTS_RETURN&statusType=A&processDefName=ValuationApplication&serviceType=&normalEditType=&businessType=F_SoOrderHeader&parentTabName=tab$10011274&_t=487684");
+                    request.AddHeader("UserAgent","Mozilla /5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.54");
+                    request.AddHeader("X-Requested-With", "XMLHttpRequest");
+                    var body = @"{""orderId"":""" + billno + @"""}";
+                    request.AddParameter("application/json", body, ParameterType.RequestBody);
+                    RestResponse response = client.Execute(request);
+                    Console.WriteLine(response.Content);
+                    return JObject.Parse(response.Content).ToObject<CRM_PartsReturnDetail>();
+                }
+                catch(Exception exp)
+                {
+                    Logger.log(exp.Message);
+                }
+                return null;
+            }
+
         }
         #endregion CRM
         #region Dis
@@ -2272,7 +2377,7 @@ namespace Utils
                     request.AddHeader("Program-Code", "login");
                     request.AddHeader("Referer", "http://fx.hzrobam.com/");
                     request.AddHeader("UserAgent", "Mozilla /5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.102 Safari/537.36 Edg/104.0.1293.63");
-                    var body = @"{""params"":{""userId"":""" + m_Account.Account + @""",""passwordType"":""hash"",""password"":""" + m_Account.FPWD + @"""}}";
+                    var body = @"{""params"":{""userId"":""" + m_Account.Account + @""",""passwordType"":""hash"",""password"":""" + m_Account.Password + @"""}}";
                     request.AddParameter("application/json", body, ParameterType.RequestBody);
                     RestResponse response = client.Execute(request);
                     var jobj = JObject.Parse(response.Content).ToObject<DIS_Signin>();
@@ -3370,7 +3475,7 @@ namespace Utils
                     request.AddHeader("Referer", "http://fx.hzrobam.com/");
                     request.AddHeader("token", m_Token);
                     request.AddHeader("UserAgent", "Mozilla /5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.42");
-                    var body = @"{""param"":{""isaccurate"":""Y"",""conditions"":[],""action_no"":""btnQuery""},""pageSize"":10,""startPage"":1}";
+                    var body = @"{""param"":{""isaccurate"":""Y"",""conditions"":[],""action_no"":""btnQuery""},""pageSize"":1000,""startPage"":1}";
                     request.AddParameter("application/json", body, ParameterType.RequestBody);
                     RestResponse response = client.Execute(request);
                     Console.WriteLine(response.Content);
@@ -3388,13 +3493,9 @@ namespace Utils
                 {
                     Checklogin();
                     var client = new RestClient(
-                        new HttpClient()
-                        {
-                            BaseAddress = new Uri(
+                        new HttpClient(){BaseAddress = new Uri(
                             "http://fx.hzrobam.com/DWGateway/restful/Base/ISccCodeServrce/getSccCode"
-                            ),
-                            Timeout = TimeSpan.FromMinutes(20)
-                        }
+                            ),Timeout = TimeSpan.FromMinutes(20)}
                         );
                     var request = new RestRequest();
                     request.Method = Method.Post;
@@ -3418,6 +3519,58 @@ namespace Utils
                     return JObject.Parse(response.Content).ToObject<DIS_SecondChannel>();
                 }
                 catch(Exception exp)
+                {
+                    Logger.log(exp.Message);
+                }
+                return null;
+            }
+            public DIS_Stock GetStocks()
+            {
+                try
+                {
+                    Checklogin();
+                    var client = new RestClient(
+                        new HttpClient(){BaseAddress = new Uri(
+                        "http://fx.hzrobam.com/DWGateway/restful/Base/IWarehouseService/getWarehouseList"
+                        ),Timeout = TimeSpan.FromMinutes(20)}
+                        );
+                    
+                    var request = new RestRequest();
+                    request.Method = Method.Post;
+                    request.AddHeader("Accept", "application/json, text/plain, */*");
+                    request.AddHeader("Accept-Encoding", "gzip, deflate");
+                    request.AddHeader("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6");
+                    request.AddHeader("Cache-Control", "no-cache");
+                    request.AddHeader("Connection", "keep-alive");
+                    request.AddHeader("Content-Type", "application/json; charset=UTF-8");
+                    request.AddHeader("Host", "fx.hzrobam.com");
+                    request.AddHeader("Origin", "http://fx.hzrobam.com");
+                    request.AddHeader("Pragma", "no-cache");
+                    request.AddHeader("Program-Code", "inm/drp_inm_m02/drp_inm_m02_s01");
+                    request.AddHeader("Referer", "http://fx.hzrobam.com/");
+                    request.AddHeader("token", m_Token);
+                    request.AddHeader("UserAgent", "Mozilla /5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.54");
+                    var body = @"{
+                    " + "\n" +
+                                        @"    ""pageSize"": ""1000"",
+                    " + "\n" +
+                                        @"    ""startPage"": 1,
+                    " + "\n" +
+                                        @"    ""param"": {
+                    " + "\n" +
+                                        @"        ""isaccurate"": ""Y"",
+                    " + "\n" +
+                                        @"        ""conditions"": []
+                    " + "\n" +
+                                        @"    }
+                    " + "\n" +
+                                        @"}";
+                    request.AddParameter("application/json", body, ParameterType.RequestBody);
+                    RestResponse response = client.Execute(request);
+                    Console.WriteLine(response.Content);
+                    return JObject.Parse(response.Content).ToObject<DIS_Stock>();
+                }
+                catch (Exception exp)
                 {
                     Logger.log(exp.Message);
                 }

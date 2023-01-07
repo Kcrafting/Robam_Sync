@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,12 @@ namespace Models
         {
             [JsonProperty(PropertyName = "FNumber")]
             public string FNumber { get; set; } = "";
+        }
+        [JsonObject(MemberSerialization.OptOut)]
+        public class K3Cloud_FName
+        {
+            [JsonProperty(PropertyName = "FNumber")]
+            public string FName { get; set; } = "";
         }
         [JsonObject(MemberSerialization.OptOut)]
         public class K3Cloud_FUserID
@@ -58,11 +65,46 @@ namespace Models
             public int width { get; set; }//": 1850,
             public int height { get; set; }//": 700
         }
-        
+        [JsonObject(MemberSerialization.OptOut)]
+        public class K3Cloud_FNumberAndName
+        {
+            public string FNumber { get; set; }
+            public string FName { get; set; }
+        }
+        [JsonObject(MemberSerialization.OptOut)]
+        public class K3Cloud_Bill_SaveHeader<T>  where T : new()
+        {
+            [JsonProperty(PropertyName = "NeedUpDateFields")]
+            public JArray NeedUpDateFields { get; set; } = new JArray();
+            [JsonProperty(PropertyName = "NeedReturnFields")]
+            public JArray NeedReturnFields { get; set; } = new JArray();
+            [JsonProperty(PropertyName = "IsDeleteEntry")]
+            public string IsDeleteEntry { get; set; } = "true";
+            [JsonProperty(PropertyName = "SubSystemId")]
+            public string SubSystemId { get; set; } = "";
+            [JsonProperty(PropertyName = "IsVerifyBaseDataField")]
+            public string IsVerifyBaseDataField { get; set; } = "false";
+            [JsonProperty(PropertyName = "IsEntryBatchFill")]
+            public string IsEntryBatchFill { get; set; } = "true";
+            [JsonProperty(PropertyName = "ValidateFlag")]
+            public string ValidateFlag { get; set; } = "true";
+            [JsonProperty(PropertyName = "NumberSearch")]
+            public string NumberSearch { get; set; } = "true";
+            [JsonProperty(PropertyName = "IsAutoAdjustField")]
+            public string IsAutoAdjustField { get; set; } = "false";
+            [JsonProperty(PropertyName = "InterationFlags")]
+            public string InterationFlags { get; set; } = "";
+            [JsonProperty(PropertyName = "IgnoreInterationFlag")]
+            public string IgnoreInterationFlag { get; set; } = "";
+            [JsonProperty(PropertyName = "IsControlPrecision")]
+            public string IsControlPrecision { get; set; } = "false";
+            [JsonProperty(PropertyName = "ValidateRepeatJson")]
+            public string ValidateRepeatJson { get; set; } = "false";
+            [JsonProperty(PropertyName = "Model")]
+            public T Model { get; set; } = new T();
+
+        }
+
     }
-    public class K3Cloud_FNumberAndName
-    {
-        public string FNumber { get; set; }
-        public string FName { get; set; }
-    }
+    
 }

@@ -1876,9 +1876,9 @@ namespace Utils
             return CreateResult.UnknownError;
             
         }
-        public List<K3Cloud_FNumberAndName> GetProductstatusList()
+        public List<K3Cloud_Common.K3Cloud_FNumberAndName> GetProductstatusList()
         {
-            List<K3Cloud_FNumberAndName> list = new List<K3Cloud_FNumberAndName>();
+            List<K3Cloud_Common.K3Cloud_FNumberAndName> list = new List<K3Cloud_Common.K3Cloud_FNumberAndName>();
             try
             {
                 var filter = new K3Cloud_Current_Query()
@@ -1892,7 +1892,7 @@ namespace Utils
                 var jrr = JArray.Parse(queryResult);
                 for(int i = 1; i < jrr.Count; i++)
                 {
-                    list.Add(new K3Cloud_FNumberAndName() { FNumber = jrr[i][0].ToString(), FName = jrr[i][1].ToString() });
+                    list.Add(new K3Cloud_Common.K3Cloud_FNumberAndName() { FNumber = jrr[i][0].ToString(), FName = jrr[i][1].ToString() });
                 }
                 return list;
             }
