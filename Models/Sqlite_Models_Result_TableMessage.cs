@@ -35,7 +35,8 @@ namespace Robam_Sync.Models
 
     public class Result_TableMessage_syncMessage
     {
-        public bool isFinish { get; set; }
+        public bool IsDone { get; set; }
+        public string Tips { get; set; }
     }
     public class Sqlite_Models_Result_TableMessage
     {

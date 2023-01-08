@@ -950,10 +950,10 @@ namespace Utils
             
             var ret = billType.ToUpper() switch
             {
-                "INSTOCK" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Instock>().Select(i => i.Format()).ToList() ,syncMessage = new Result_TableMessage_syncMessage() {isFinish = finish } },
-                "OUTSTOCK" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Outstock>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { isFinish = finish } },
-                "QTXXTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_QTXXTB>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { isFinish = finish } },
-                "JCZLTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_JCZLTB>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { isFinish = finish } },
+                "INSTOCK" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Instock>().Select(i => i.Format()).ToList() ,syncMessage = new Result_TableMessage_syncMessage() {IsDone = finish } },
+                "OUTSTOCK" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Outstock>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { IsDone = finish } },
+                "QTXXTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_QTXXTB>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { IsDone = finish } },
+                "JCZLTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_JCZLTB>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { IsDone = finish } },
             };
             return ret;
         }

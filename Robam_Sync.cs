@@ -218,7 +218,7 @@ namespace Robam_Sync
                            }
                        });
                     //return Ok(new { Message = JsonConvert.SerializeObject(Sqlite_Helper_Static.read<Sqlite_Models_Instock>()) });
-                    _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK",true));
+                      _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK",true));
                     return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Instock>().Select(i=>i.Format()).ToList() };
                 }
                 catch (Exception exp)
