@@ -945,17 +945,24 @@ namespace Utils
             }
             return k3bill;
         }
-        public static Sqlite_Models_Result_TableMessage StaticMessage(string billType,bool finish = false)
+        public static Sqlite_Models_Result_TableMessage StaticMessage(string billType,string tips = "",bool finish = false)
         {
             
             var ret = billType.ToUpper() switch
             {
-                "INSTOCK" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Instock>().Select(i => i.Format()).ToList() ,syncMessage = new Result_TableMessage_syncMessage() {IsDone = finish } },
-                "OUTSTOCK" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Outstock>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { IsDone = finish } },
-                "QTXXTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_QTXXTB>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { IsDone = finish } },
-                "JCZLTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_JCZLTB>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { IsDone = finish } },
+                "INSTOCK" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Instock>().Select(i => i.Format()).ToList() ,syncMessage = new Result_TableMessage_syncMessage() {isDone = finish,tips = tips } },
+                "OUTSTOCK" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Outstock>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { isDone = finish, tips = tips } },
+                "QTXXTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_QTXXTB>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { isDone = finish, tips = tips } },
+                "JCZLTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_JCZLTB>().Select(i => i.Format()).ToList(), syncMessage = new Result_TableMessage_syncMessage() { isDone = finish, tips = tips } },
             };
             return ret;
+        }
+        public static string GetExecutePercent(int currentIndex,int maxCount)
+        {
+            if (maxCount == 0) return "100%";
+            if (currentIndex == 0) return "0%";
+            var d = (((decimal)currentIndex / (decimal)maxCount) * 100).ToString();
+            return d.Substring(0, 2).Replace(".","") + "%";
         }
     }
 }

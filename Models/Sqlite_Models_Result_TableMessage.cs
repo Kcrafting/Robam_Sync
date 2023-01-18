@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -35,8 +36,10 @@ namespace Robam_Sync.Models
 
     public class Result_TableMessage_syncMessage
     {
-        public bool IsDone { get; set; }
-        public string Tips { get; set; }
+        [JsonProperty(PropertyName = "isDone")]
+        public bool isDone { get; set; }
+        [JsonProperty(PropertyName = "tips")]
+        public string tips { get; set; }
     }
     public class Sqlite_Models_Result_TableMessage
     {

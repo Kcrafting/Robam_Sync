@@ -127,16 +127,16 @@ namespace Robam_Sync
                            if (unsyncbilltype == null)
                            {
                                wl_instock("单据列表获取失败!", true);
-                               _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK"));
+                               _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK", "单据列表获取失败"));
                                return;
                            }
                            wl_instock("开始获取单据列表，对比未同步信息");
-                           _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK"));
+                           _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK", "开始获取单据列表，对比未同步信息"));
                            var instockbill = ins.GetOutstockbill(_StartDate.ToString("yyyy-MM-dd HH:mm:ss"), _EndDate.ToString("yyyy-MM-dd HH:mm:ss"));
                            if (instockbill == null && instockbill.crminvexportheaderss == null)
                            {
                                wl_instock("老板分销系统获取单据失败", true);
-                               _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK"));
+                               _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK", "老板分销系统获取单据失败"));
                                return;
                            }
                            wl_instock("老板分销系统获取单据共计" + (instockbill?.crminvexportheaderss?.Count.ToString() ?? "0") + "条");
@@ -145,11 +145,11 @@ namespace Robam_Sync
                            if (k3billlist == null)
                            {
                                wl_instock("获取K3单据列表失败", true);
-                               _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK"));
+                               _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK", "获取K3单据列表失败"));
                                return;
                            }
                            wl_instock("获取K3单据列表共计" + (k3billlist?.Count.ToString() ?? "0") + "条");
-                           _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK"));
+                           _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK", "获取K3单据列表共计" + (k3billlist?.Count.ToString() ?? "0") + "条"));
                            //过滤单据类型导入
                            //if (billtypelist == null)
                            //{
@@ -162,12 +162,14 @@ namespace Robam_Sync
                                i => !unsyncbilltype.Contains(i.orderTypeCode)
                                ).Select(i => i.orderNo).ToList();
                            wl_instock("筛选需要同步的信息");
-                           _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK"));
+                           _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK", "筛选需要同步的信息"));
                            var unsynced = billlists.Except(k3billlist);
                            wl_instock("未同步单据共计" + (unsynced?.Count().ToString() ?? "0") + "条");
                            wl_instock("需要同步的信息共计" + unsynced.Count().ToString() + "条");
                            _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK"));
                            int _index = 0;
+                           int maxCount = 0;
+                           maxCount = unsynced.Count();
                            if (unsynced.Count() > 0)
                            {
                                foreach (var bill in unsynced)
@@ -189,12 +191,12 @@ namespace Robam_Sync
                                            if (k3cloud.SyncInstockBill(detailbill, ins, acct.FCompany) == KingdeeApi.SyncResult.AllSuccess)
                                            {
                                                wl_instock("第" + _index.ToString() + "条信息，同步单据完成\n");
-                                               _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK"));
+                                               _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK",Utils.Utils.GetExecutePercent(_index,maxCount)));
                                            }
                                            else
                                            {
                                                wl_instock("第" + _index.ToString() + "条信息，同步单据失败\n", true);
-                                               _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK"));
+                                               _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK", Utils.Utils.GetExecutePercent(_index, maxCount)));
                                            }
                                        }
                                        else
@@ -218,7 +220,7 @@ namespace Robam_Sync
                            }
                        });
                     //return Ok(new { Message = JsonConvert.SerializeObject(Sqlite_Helper_Static.read<Sqlite_Models_Instock>()) });
-                      _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK",true));
+                      _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK","同步完成!",true));
                     return new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Instock>().Select(i=>i.Format()).ToList() };
                 }
                 catch (Exception exp)
@@ -237,7 +239,7 @@ namespace Robam_Sync
             }
             else
             {
-                _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK", true));
+                _chatHubContext.Clients.All.messageReceived(Utils.Utils.StaticMessage("INSTOCK", "同步失败!",true));
                 return new Sqlite_Models_Result_TableMessage() { rowData = new List<Result_TableMessage_RowData>() { new Result_TableMessage_RowData() { index = 1,isError = true,description = "上次同步未完成!",errorTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") } } };
                 //return BadRequest(new { Message = JsonConvert.SerializeObject(new Sqlite_Models_Instock() { index = 1, isError = true, errorTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), description = "上次同步未完成!" }) });
                
@@ -2075,6 +2077,21 @@ namespace Robam_Sync
             wl_instock = Utils.Utils.RecordStepNew<Sqlite_Models_AutoOutstock>;
             syncoutstock(paras);
             wl_instock = Utils.Utils.RecordStepNew<Sqlite_Models_Outstock>;
+            return Ok(new { Message = "导入成功!" });
+        }
+        [HttpPost]
+        [Route("api/execute_clearlog")]
+        public IActionResult ClearRKZDDRLog([FromBody] Models.Paras paras)
+        {
+            Sqlite_Helper_Static.droptable<Sqlite_Models_AutoInstock>();
+            return Ok(new { Message = "导入成功!" });
+        }
+
+        [HttpPost]
+        [Route("api/execute_clearlog")]
+        public IActionResult ClearCKZDDRLog([FromBody] Models.Paras paras)
+        {
+            Sqlite_Helper_Static.droptable<Sqlite_Models_AutoOutstock>();
             return Ok(new { Message = "导入成功!" });
         }
     }
