@@ -70,6 +70,7 @@ namespace Robam_Sync.SignalRWebpack
                 "OUTSTOCK" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_Outstock>().Select(i => i.Format()).ToList() },
                 "QTXXTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_QTXXTB>().Select(i => i.Format()).ToList() },
                 "JCZLTB" => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_JCZLTB>().Select(i => i.Format()).ToList() },
+                _ => new Sqlite_Models_Result_TableMessage() { rowData = Sqlite_Helper_Static.read<Sqlite_Models_JCZLTB>().Select(i => i.Format()).ToList() },
             };
             await Clients.All.messageReceived(ret);
             Sqlite_Helper_Static.write(new SignlR_Logs() { Message = "方法调用完毕!当前线程" + Thread.CurrentThread.ManagedThreadId.ToString() });
